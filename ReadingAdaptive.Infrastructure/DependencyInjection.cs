@@ -8,6 +8,7 @@ using ReadingAdaptive.Application.Adaptive.Interfaces;
 using ReadingAdaptive.Application.Catalogs.Interfaces;
 using ReadingAdaptive.Application.Evaluations.Interfaces;
 using ReadingAdaptive.Application.Readings.Interfaces;
+using ReadingAdaptive.Infrastructure.Configuration;
 using ReadingAdaptive.Application.TeacherPanel.Interfaces;
 using ReadingAdaptive.Infrastructure.Persistence;
 using ReadingAdaptive.Infrastructure.Security;
@@ -30,6 +31,7 @@ public static class DependencyInjection
 
         services.AddDbContext<ReadingAdaptiveDbContext>(options =>
             options.UseSqlServer(connectionString));
+        services.Configure<AcademicFlowOptions>(configuration.GetSection(AcademicFlowOptions.SectionName));
 
         services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
         services.AddScoped<IAuthService, AuthService>();

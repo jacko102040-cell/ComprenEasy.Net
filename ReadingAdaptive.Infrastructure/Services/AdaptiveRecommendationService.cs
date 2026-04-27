@@ -1,9 +1,12 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using ReadingAdaptive.Application.AcademicFlow.Interfaces;
 using ReadingAdaptive.Application.Adaptive.Constants;
 using ReadingAdaptive.Application.Adaptive.Dtos;
 using ReadingAdaptive.Application.Adaptive.Exceptions;
 using ReadingAdaptive.Application.Adaptive.Interfaces;
+using ReadingAdaptive.Application.Evaluations.Constants;
+using ReadingAdaptive.Application.Readings.Constants;
 using ReadingAdaptive.Infrastructure.Persistence;
 using ReadingAdaptive.Infrastructure.Persistence.Entities;
 
@@ -15,10 +18,14 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
     private const string ModelVersion = "rules-v1";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
+    private readonly IAcademicFlowService _academicFlowService;
 
-    public AdaptiveRecommendationService(ReadingAdaptiveDbContext dbContext)
+    public AdaptiveRecommendationService(
+        ReadingAdaptiveDbContext dbContext,
+        IAcademicFlowService academicFlowService)
     {
         _dbContext = dbContext;
+        _academicFlowService = academicFlowService;
     }
 
     public async Task<AdaptiveRecommendationDto> GetLatestRecommendationAsync(
@@ -44,7 +51,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             throw new AdaptiveNotFoundException("No adaptive recommendation was found for the authenticated student.");
         }
 
-        return MapRecommendation(recommendation);
+        return await MapRecommendationAsync(recommendation, studentId, cancellationToken);
     }
 
     public async Task<AdaptiveRecommendationDto> GenerateRecommendationAsync(
@@ -68,7 +75,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         if (existingRecommendation is not null)
         {
-            return MapRecommendation(existingRecommendation);
+            return await MapRecommendationAsync(existingRecommendation, studentId, cancellationToken);
         }
 
         var attempt = await _dbContext.AssessmentAttempts
@@ -140,10 +147,9 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             currentDifficulty,
             allDifficulties);
 
-        var recommendedAssessmentId = await ResolveRecommendedAssessmentIdAsync(
-            attempt.AssessmentId,
-            attempt.Assessment.AssessmentType,
-            ruleOutcome.RecommendedDifficultyLevelId,
+        var suggestedActivity = await ResolveSuggestedActivityAsync(
+            studentId,
+            attempt.Assessment.ReadingId,
             cancellationToken);
 
         var confidenceScore = CalculateConfidenceScore(
@@ -159,7 +165,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             CurrentDifficultyLevelId = currentDifficulty.DifficultyLevelId,
             RecommendedDifficultyLevelId = ruleOutcome.RecommendedDifficultyLevelId,
             PredictedAction = ruleOutcome.PredictedAction,
-            RecommendedAssessmentId = recommendedAssessmentId,
+            RecommendedAssessmentId = suggestedActivity.RecommendedAssessmentId,
             EngineType = AdaptiveEngineTypes.Rules,
             ConfidenceScore = confidenceScore,
             CreatedAt = DateTime.UtcNow
@@ -200,7 +206,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
                 .ThenInclude(sourceAttempt => sourceAttempt.Assessment)
             .SingleAsync(item => item.RecommendationId == recommendation.RecommendationId, cancellationToken);
 
-        return MapRecommendation(savedRecommendation);
+        return await MapRecommendationAsync(savedRecommendation, studentId, cancellationToken);
     }
 
     private async Task EnsureStudentAsync(int studentId, CancellationToken cancellationToken)
@@ -289,24 +295,6 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             higherDifficulty?.DifficultyLevelId ?? currentDifficulty.DifficultyLevelId);
     }
 
-    private async Task<int?> ResolveRecommendedAssessmentIdAsync(
-        int sourceAssessmentId,
-        string sourceAssessmentType,
-        byte recommendedDifficultyLevelId,
-        CancellationToken cancellationToken)
-    {
-        return await _dbContext.Assessments
-            .AsNoTracking()
-            .Where(assessment =>
-                assessment.IsActive &&
-                assessment.AssessmentId != sourceAssessmentId &&
-                assessment.AssessmentType == sourceAssessmentType &&
-                assessment.DifficultyLevelId == recommendedDifficultyLevelId)
-            .OrderBy(assessment => assessment.AssessmentId)
-            .Select(assessment => (int?)assessment.AssessmentId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
     private static decimal CalculateConfidenceScore(
         decimal totalScore,
         decimal completionPercentage,
@@ -335,8 +323,16 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             $"action={predictedAction};difficulty={recommendedDifficultyLevelId};score={totalScore:0.##};completion={completionPercentage:0.##};errors={totalErrors};avg={avgResponseTimeSeconds:0.##}");
     }
 
-    private static AdaptiveRecommendationDto MapRecommendation(AdaptiveRecommendation recommendation)
+    private async Task<AdaptiveRecommendationDto> MapRecommendationAsync(
+        AdaptiveRecommendation recommendation,
+        int studentId,
+        CancellationToken cancellationToken)
     {
+        var suggestedActivity = await ResolveSuggestedActivityAsync(
+            studentId,
+            recommendation.SourceAttempt.Assessment.ReadingId,
+            cancellationToken);
+
         return new AdaptiveRecommendationDto(
             recommendation.RecommendationId,
             recommendation.SourceAttemptId,
@@ -348,14 +344,134 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             recommendation.RecommendedDifficultyLevelId,
             recommendation.RecommendedDifficultyLevel.Name,
             recommendation.PredictedAction,
-            recommendation.RecommendedAssessmentId,
-            recommendation.RecommendedAssessment?.Title,
+            suggestedActivity.RecommendedActivityType,
+            suggestedActivity.RecommendedRoute,
+            suggestedActivity.RecommendedReadingId,
+            suggestedActivity.RecommendedAssessmentId,
+            suggestedActivity.RecommendedAssessmentTitle,
             recommendation.EngineType,
             recommendation.ConfidenceScore,
             recommendation.CreatedAt);
     }
 
+    private async Task<SuggestedActivity> ResolveSuggestedActivityAsync(
+        int studentId,
+        int? preferredReadingId,
+        CancellationToken cancellationToken)
+    {
+        var summary = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
+
+        if (!summary.HasCompletedPretest)
+        {
+            return await BuildAssessmentSuggestionAsync(
+                AssessmentTypes.Pretest,
+                AdaptiveActivityTypes.Pretest,
+                "/pretests",
+                cancellationToken);
+        }
+
+        if (summary.HasCompletedPosttest)
+        {
+            return new SuggestedActivity(
+                AdaptiveActivityTypes.FinalComparison,
+                "/pre-post-comparison",
+                null,
+                null,
+                null);
+        }
+
+        if (!summary.HasCompletedMinimumReadingIntervention)
+        {
+            return await BuildReadingSuggestionAsync(preferredReadingId, cancellationToken);
+        }
+
+        return await BuildAssessmentSuggestionAsync(
+            AssessmentTypes.Posttest,
+            AdaptiveActivityTypes.Posttest,
+            "/posttests",
+            cancellationToken);
+    }
+
+    private async Task<SuggestedActivity> BuildAssessmentSuggestionAsync(
+        string assessmentType,
+        string activityType,
+        string route,
+        CancellationToken cancellationToken)
+    {
+        var assessment = await _dbContext.Assessments
+            .AsNoTracking()
+            .Where(item => item.IsActive && item.AssessmentType == assessmentType)
+            .OrderBy(item => item.Title)
+            .ThenBy(item => item.AssessmentId)
+            .Select(item => new
+            {
+                item.AssessmentId,
+                item.Title
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return new SuggestedActivity(
+            activityType,
+            route,
+            null,
+            assessment?.AssessmentId,
+            assessment?.Title);
+    }
+
+    private async Task<SuggestedActivity> BuildReadingSuggestionAsync(
+        int? preferredReadingId,
+        CancellationToken cancellationToken)
+    {
+        var reading = await ResolveRecommendedReadingAsync(preferredReadingId, cancellationToken);
+        var route = reading is null
+            ? "/readings"
+            : $"/readings/{reading.ReadingId}";
+
+        return new SuggestedActivity(
+            AdaptiveActivityTypes.Reading,
+            route,
+            reading?.ReadingId,
+            null,
+            null);
+    }
+
+    private async Task<RecommendedReading?> ResolveRecommendedReadingAsync(
+        int? preferredReadingId,
+        CancellationToken cancellationToken)
+    {
+        if (preferredReadingId.HasValue)
+        {
+            var preferredReading = await _dbContext.Readings
+                .AsNoTracking()
+                .Where(item => item.ReadingId == preferredReadingId.Value && item.IsActive)
+                .Select(item => new RecommendedReading(item.ReadingId))
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (preferredReading is not null)
+            {
+                return preferredReading;
+            }
+        }
+
+        return await _dbContext.Readings
+            .AsNoTracking()
+            .Where(item => item.IsActive)
+            .OrderBy(item => item.Title)
+            .ThenBy(item => item.ReadingId)
+            .Select(item => new RecommendedReading(item.ReadingId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     private sealed record RuleOutcome(
         string PredictedAction,
         byte RecommendedDifficultyLevelId);
+
+    private sealed record SuggestedActivity(
+        string RecommendedActivityType,
+        string RecommendedRoute,
+        int? RecommendedReadingId,
+        int? RecommendedAssessmentId,
+        string? RecommendedAssessmentTitle);
+
+    private sealed record RecommendedReading(int ReadingId);
 }

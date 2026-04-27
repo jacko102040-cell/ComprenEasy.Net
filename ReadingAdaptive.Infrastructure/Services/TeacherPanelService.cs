@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using ReadingAdaptive.Application.Adaptive.Constants;
 using ReadingAdaptive.Application.Adaptive.Dtos;
 using ReadingAdaptive.Application.Auth.Interfaces;
 using ReadingAdaptive.Application.Evaluations.Constants;
@@ -352,6 +353,14 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
     private static AdaptiveRecommendationDto MapAdaptiveRecommendation(AdaptiveRecommendation recommendation)
     {
+        var recommendedActivityType = recommendation.RecommendedAssessment?.AssessmentType ??
+            (string.Equals(
+                recommendation.SourceAttempt.Assessment.AssessmentType,
+                ReadingAssessmentTypes.ReadingPractice,
+                StringComparison.Ordinal)
+                ? AdaptiveActivityTypes.Reading
+                : null);
+
         return new AdaptiveRecommendationDto(
             recommendation.RecommendationId,
             recommendation.SourceAttemptId,
@@ -363,6 +372,9 @@ public sealed class TeacherPanelService : ITeacherPanelService
             recommendation.RecommendedDifficultyLevelId,
             recommendation.RecommendedDifficultyLevel.Name,
             recommendation.PredictedAction,
+            recommendedActivityType,
+            null,
+            recommendation.RecommendedAssessment?.ReadingId,
             recommendation.RecommendedAssessmentId,
             recommendation.RecommendedAssessment?.Title,
             recommendation.EngineType,

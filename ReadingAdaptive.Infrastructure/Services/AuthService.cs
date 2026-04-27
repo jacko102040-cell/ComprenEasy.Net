@@ -26,7 +26,7 @@ public sealed class AuthService : IAuthService
         RegisterStudentRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var username = request.Username.Trim().ToLowerInvariant();
+        var username = NormalizeUsername(request.Username);
         var fullName = request.FullName.Trim();
         var section = string.IsNullOrWhiteSpace(request.Section)
             ? null
@@ -90,7 +90,7 @@ public sealed class AuthService : IAuthService
         LoginRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var username = request.Username.Trim();
+        var username = NormalizeUsername(request.Username);
 
         var user = await _dbContext.Users
             .AsNoTracking()
@@ -136,5 +136,10 @@ public sealed class AuthService : IAuthService
                 user.Student != null ? user.Student.Grade : null,
                 user.Student != null ? user.Student.Section : null))
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private static string NormalizeUsername(string username)
+    {
+        return username.Trim().ToLowerInvariant();
     }
 }

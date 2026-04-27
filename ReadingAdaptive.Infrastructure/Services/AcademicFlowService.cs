@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using ReadingAdaptive.Application.AcademicFlow.Dtos;
 using ReadingAdaptive.Application.AcademicFlow.Exceptions;
 using ReadingAdaptive.Application.AcademicFlow.Interfaces;
 using ReadingAdaptive.Application.Evaluations.Constants;
 using ReadingAdaptive.Application.Readings.Constants;
+using ReadingAdaptive.Infrastructure.Configuration;
 using ReadingAdaptive.Infrastructure.Persistence;
 
 namespace ReadingAdaptive.Infrastructure.Services;
@@ -11,17 +13,20 @@ namespace ReadingAdaptive.Infrastructure.Services;
 public sealed class AcademicFlowService : IAcademicFlowService
 {
     private const string CompletedStatus = "Completed";
-    private const int MinimumReadingSessionsRequired = 1;
     private const string PretestStage = "Pretest";
     private const string ReadingsStage = "Readings";
     private const string PosttestStage = "Posttest";
     private const string CompletedStage = "Completed";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
+    private readonly int _minimumReadingSessionsRequired;
 
-    public AcademicFlowService(ReadingAdaptiveDbContext dbContext)
+    public AcademicFlowService(
+        ReadingAdaptiveDbContext dbContext,
+        IOptions<AcademicFlowOptions> options)
     {
         _dbContext = dbContext;
+        _minimumReadingSessionsRequired = Math.Max(1, options.Value.MinimumReadingSessionsRequired);
     }
 
     public async Task<AcademicFlowSummaryDto> GetCurrentSummaryAsync(
@@ -72,7 +77,7 @@ public sealed class AcademicFlowService : IAcademicFlowService
 
         var hasCompletedPretest = latestPretest is not null;
         var hasCompletedPosttest = latestPosttest is not null;
-        var hasCompletedMinimumReadingIntervention = completedReadings.Count >= MinimumReadingSessionsRequired;
+        var hasCompletedMinimumReadingIntervention = completedReadings.Count >= _minimumReadingSessionsRequired;
         var canAccessReadings = hasCompletedPretest && !hasCompletedPosttest;
         var canAccessPosttest = hasCompletedPretest && hasCompletedMinimumReadingIntervention && !hasCompletedPosttest;
         var canAccessFinalComparison = hasCompletedPosttest;
@@ -88,7 +93,7 @@ public sealed class AcademicFlowService : IAcademicFlowService
             hasCompletedPretest,
             latestPretestFinishedAt,
             completedReadings.Count,
-            MinimumReadingSessionsRequired,
+            _minimumReadingSessionsRequired,
             hasCompletedMinimumReadingIntervention,
             latestReadingFinishedAt,
             canAccessReadings,

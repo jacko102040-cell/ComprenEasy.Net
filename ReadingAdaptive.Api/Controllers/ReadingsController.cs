@@ -124,23 +124,28 @@ public class ReadingsController : ControllerBase
         }
     }
 
-    [HttpPut("sessions/{attemptId:long}/phases/{phaseId:byte}/progress")]
+    [HttpPut("sessions/{attemptId:long}/phases/{phaseId:int}/progress")]
     [ProducesResponseType(typeof(ReadingSessionProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ReadingSessionProgressDto>> SavePhaseProgress(
         long attemptId,
-        byte phaseId,
+        int phaseId,
         [FromBody] SaveReadingPhaseProgressRequestDto request,
         CancellationToken cancellationToken)
     {
         try
         {
+            if (!TryConvertPhaseId(phaseId, out var normalizedPhaseId, out var errorResult))
+            {
+                return errorResult;
+            }
+
             var studentId = GetAuthenticatedStudentId();
             var session = await _readingService.SavePhaseProgressAsync(
                 attemptId,
-                phaseId,
+                normalizedPhaseId,
                 studentId,
                 request,
                 cancellationToken);
@@ -161,23 +166,28 @@ public class ReadingsController : ControllerBase
         }
     }
 
-    [HttpPost("sessions/{attemptId:long}/phases/{phaseId:byte}/complete")]
+    [HttpPost("sessions/{attemptId:long}/phases/{phaseId:int}/complete")]
     [ProducesResponseType(typeof(ReadingSessionProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ReadingSessionProgressDto>> CompletePhase(
         long attemptId,
-        byte phaseId,
+        int phaseId,
         [FromBody] SaveReadingPhaseProgressRequestDto request,
         CancellationToken cancellationToken)
     {
         try
         {
+            if (!TryConvertPhaseId(phaseId, out var normalizedPhaseId, out var errorResult))
+            {
+                return errorResult;
+            }
+
             var studentId = GetAuthenticatedStudentId();
             var session = await _readingService.CompletePhaseAsync(
                 attemptId,
-                phaseId,
+                normalizedPhaseId,
                 studentId,
                 request,
                 cancellationToken);
@@ -275,5 +285,22 @@ public class ReadingsController : ControllerBase
         }
 
         return studentId;
+    }
+
+    private bool TryConvertPhaseId(
+        int phaseId,
+        out byte normalizedPhaseId,
+        out ActionResult<ReadingSessionProgressDto> errorResult)
+    {
+        if (phaseId < byte.MinValue || phaseId > byte.MaxValue)
+        {
+            normalizedPhaseId = default;
+            errorResult = BadRequest(new { message = "Phase id must be between 0 and 255." });
+            return false;
+        }
+
+        normalizedPhaseId = (byte)phaseId;
+        errorResult = null!;
+        return true;
     }
 }

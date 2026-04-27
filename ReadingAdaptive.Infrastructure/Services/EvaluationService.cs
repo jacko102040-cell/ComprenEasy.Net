@@ -17,6 +17,8 @@ public sealed class EvaluationService : IEvaluationService
 {
     private const string CompletedStatus = "Completed";
     private const string InProgressStatus = "InProgress";
+    private const string ReadingsStage = "Readings";
+    private const string CompletedStage = "Completed";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
     private readonly IAcademicFlowService _academicFlowService;
@@ -374,6 +376,13 @@ public sealed class EvaluationService : IEvaluationService
             throw new EvaluationValidationException("Only in-progress attempts can be finalized.");
         }
 
+        await EnsureAssessmentTypeAccessibleAsync(
+            attempt.Assessment.AssessmentType,
+            studentId,
+            cancellationToken);
+
+        await EnsureAttemptHasAllRequiredAnswersAsync(attempt, cancellationToken);
+
         var snapshot = await BuildAttemptSnapshotAsync(attempt, cancellationToken);
         var finishedAt = DateTime.UtcNow;
         var totalTimeSeconds = snapshot.Answers.Sum(answer => answer.AnswerTimeSeconds);
@@ -567,6 +576,40 @@ public sealed class EvaluationService : IEvaluationService
         return attempt;
     }
 
+    private async Task EnsureAttemptHasAllRequiredAnswersAsync(
+        AssessmentAttempt attempt,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(attempt.Assessment.AssessmentType, AssessmentTypes.Pretest, StringComparison.Ordinal) &&
+            !string.Equals(attempt.Assessment.AssessmentType, AssessmentTypes.Posttest, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var totalQuestions = await _dbContext.AssessmentQuestions
+            .AsNoTracking()
+            .CountAsync(
+                question =>
+                    question.AssessmentId == attempt.AssessmentId &&
+                    question.IsActive &&
+                    question.Question.IsActive,
+                cancellationToken);
+
+        var answeredQuestions = await _dbContext.AttemptAnswers
+            .AsNoTracking()
+            .CountAsync(
+                answer => answer.AttemptId == attempt.AttemptId && answer.SelectedOptionId != null,
+                cancellationToken);
+
+        var missingAnswers = totalQuestions - answeredQuestions;
+
+        if (missingAnswers > 0)
+        {
+            throw new EvaluationValidationException(
+                $"Cannot finalize {attempt.Assessment.AssessmentType}. {missingAnswers} question(s) are still unanswered.");
+        }
+    }
+
     private async Task<AssessmentAttemptResultDto> BuildAttemptSnapshotAsync(
         AssessmentAttempt attempt,
         CancellationToken cancellationToken)
@@ -683,26 +726,57 @@ public sealed class EvaluationService : IEvaluationService
         int studentId,
         CancellationToken cancellationToken)
     {
-        if (!string.Equals(assessmentType, AssessmentTypes.Posttest, StringComparison.Ordinal))
+        if (!string.Equals(assessmentType, AssessmentTypes.Pretest, StringComparison.Ordinal) &&
+            !string.Equals(assessmentType, AssessmentTypes.Posttest, StringComparison.Ordinal))
         {
             return;
         }
 
         var summary = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
 
-        if (summary.CanAccessPosttest)
+        if (string.Equals(assessmentType, AssessmentTypes.Pretest, StringComparison.Ordinal))
+        {
+            if (string.Equals(summary.CurrentStage, AssessmentTypes.Pretest, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (summary.HasCompletedPretest)
+            {
+                throw new EvaluationValidationException(
+                    "Pretest is no longer available because it has already been completed.");
+            }
+
+            if (string.Equals(summary.CurrentStage, ReadingsStage, StringComparison.Ordinal))
+            {
+                throw new EvaluationValidationException(
+                    "Pretest is only available during the pretest stage.");
+            }
+
+            throw new EvaluationValidationException(
+                "Pretest is not available in the current academic stage.");
+        }
+
+        if (string.Equals(summary.CurrentStage, AssessmentTypes.Posttest, StringComparison.Ordinal) &&
+            summary.CanAccessPosttest)
         {
             return;
         }
 
-        if (summary.HasCompletedPosttest)
+        if (summary.HasCompletedPosttest || string.Equals(summary.CurrentStage, CompletedStage, StringComparison.Ordinal))
         {
             throw new EvaluationValidationException(
                 "Posttest has already been completed. Review the final comparison instead.");
         }
 
+        if (!summary.HasCompletedPretest)
+        {
+            throw new EvaluationValidationException(
+                "Posttest is not available until the pretest stage has been completed.");
+        }
+
         throw new EvaluationValidationException(
-            "Posttest becomes available after completing the minimum reading intervention.");
+            "Posttest is only available after completing the minimum reading intervention and reaching the posttest stage.");
     }
 
     private async Task<ComparisonMetrics> BuildComparisonMetricsAsync(

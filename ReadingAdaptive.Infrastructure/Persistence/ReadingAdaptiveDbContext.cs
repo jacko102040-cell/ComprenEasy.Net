@@ -425,8 +425,8 @@ public partial class ReadingAdaptiveDbContext : DbContext
 
             entity.Property(e => e.OptionText).HasMaxLength(300);
 
-            entity.HasOne(d => d.Question).WithOne(p => p.QuestionOption)
-                .HasForeignKey<QuestionOption>(d => d.QuestionId)
+            entity.HasOne(d => d.Question).WithMany(p => p.QuestionOptions)
+                .HasForeignKey(d => d.QuestionId)
                 .HasConstraintName("FK_QuestionOptions_Questions");
         });
 

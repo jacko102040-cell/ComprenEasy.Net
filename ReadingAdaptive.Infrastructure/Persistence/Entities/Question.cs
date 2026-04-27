@@ -31,5 +31,5 @@ public partial class Question
 
     public virtual ICollection<FeedbackLog> FeedbackLogs { get; set; } = new List<FeedbackLog>();
 
-    public virtual QuestionOption? QuestionOption { get; set; }
+    public virtual ICollection<QuestionOption> QuestionOptions { get; set; } = new List<QuestionOption>();
 }

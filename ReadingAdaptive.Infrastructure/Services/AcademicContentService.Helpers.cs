@@ -79,6 +79,8 @@ public sealed partial class AcademicContentService
         SaveContentAssessmentRequestDto request,
         CancellationToken cancellationToken)
     {
+        var isReadingPractice = request.AssessmentType == ReadingAssessmentTypes.ReadingPractice;
+
         if (!SupportedAssessmentTypes.Contains(request.AssessmentType))
         {
             throw new AcademicContentValidationException("Unsupported assessment type.");
@@ -101,7 +103,7 @@ public sealed partial class AcademicContentService
             }
         }
 
-        if (request.AssessmentType == ReadingAssessmentTypes.ReadingPractice)
+        if (isReadingPractice)
         {
             if (!request.ReadingId.HasValue)
             {
@@ -117,6 +119,10 @@ public sealed partial class AcademicContentService
                 throw new AcademicContentValidationException("Selected reading is invalid.");
             }
         }
+        else if (request.Questions.Any(item => item.PhaseId.HasValue))
+        {
+            throw new AcademicContentValidationException("Only ReadingPractice assessments can assign phases to questions.");
+        }
 
         if (request.Questions.Select(item => item.QuestionId).Distinct().Count() != request.Questions.Count)
         {
@@ -131,6 +137,11 @@ public sealed partial class AcademicContentService
         if (request.Questions.Any(item => item.Points <= 0))
         {
             throw new AcademicContentValidationException("Question points must be greater than 0.");
+        }
+
+        if (isReadingPractice && request.Questions.Any(item => !item.PhaseId.HasValue))
+        {
+            throw new AcademicContentValidationException("ReadingPractice questions must include a valid phase.");
         }
 
         var questionIds = request.Questions.Select(item => item.QuestionId).Distinct().ToList();
@@ -153,7 +164,7 @@ public sealed partial class AcademicContentService
             .Distinct()
             .ToList();
 
-        if (phaseIds.Count > 0)
+        if (phaseIds.Count > 0 && !isReadingPractice)
         {
             var existingPhaseCount = await _dbContext.Phases
                 .AsNoTracking()
@@ -163,6 +174,11 @@ public sealed partial class AcademicContentService
             {
                 throw new AcademicContentValidationException("One or more selected assessment phases are invalid.");
             }
+        }
+
+        if (isReadingPractice)
+        {
+            await ValidateReadingPracticeQuestionPhasesAsync(request.ReadingId!.Value, phaseIds, cancellationToken);
         }
     }
 
@@ -268,9 +284,13 @@ public sealed partial class AcademicContentService
 
         foreach (var question in request.Questions)
         {
-            if (question.AssessmentQuestionId.HasValue &&
-                existingById.TryGetValue(question.AssessmentQuestionId.Value, out var existing))
+            if (question.AssessmentQuestionId.HasValue)
             {
+                if (!existingById.TryGetValue(question.AssessmentQuestionId.Value, out var existing))
+                {
+                    throw new AcademicContentValidationException("One or more assessment question ids are invalid for this assessment.");
+                }
+
                 existing.QuestionId = question.QuestionId;
                 existing.PhaseId = request.AssessmentType == ReadingAssessmentTypes.ReadingPractice
                     ? question.PhaseId
@@ -359,6 +379,30 @@ public sealed partial class AcademicContentService
         }
 
         _dbContext.QuestionOptions.RemoveRange(removableOptions);
+    }
+
+    private async Task ValidateReadingPracticeQuestionPhasesAsync(
+        int readingId,
+        IReadOnlyCollection<byte> phaseIds,
+        CancellationToken cancellationToken)
+    {
+        if (phaseIds.Count == 0)
+        {
+            return;
+        }
+
+        var existingReadingPhaseIds = await _dbContext.ReadingPhases
+            .AsNoTracking()
+            .Where(item => item.ReadingId == readingId && phaseIds.Contains(item.PhaseId))
+            .Select(item => item.PhaseId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (existingReadingPhaseIds.Count != phaseIds.Count)
+        {
+            throw new AcademicContentValidationException(
+                "One or more selected phases do not belong to the linked reading.");
+        }
     }
 
     private async Task<ContentQuestionDetailDto> MapQuestionDetailAsync(
