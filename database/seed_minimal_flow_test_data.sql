@@ -91,19 +91,37 @@ BEGIN TRY
     -----------------------------------------------------------------------
     -- 2) Catalogos base
     -----------------------------------------------------------------------
-    IF NOT EXISTS (SELECT 1 FROM DifficultyLevels WHERE Name = 'Basico')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM DifficultyLevels
+        WHERE Name = 'Basico'
+           OR RankOrder = 1
+    )
     BEGIN
         INSERT INTO DifficultyLevels (Name, RankOrder)
         VALUES ('Basico', 1);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM DifficultyLevels WHERE Name = 'Intermedio')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM DifficultyLevels
+        WHERE Name = 'Intermedio'
+           OR RankOrder = 2
+    )
     BEGIN
         INSERT INTO DifficultyLevels (Name, RankOrder)
         VALUES ('Intermedio', 2);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM DifficultyLevels WHERE Name = 'Avanzado')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM DifficultyLevels
+        WHERE Name = 'Avanzado'
+           OR RankOrder = 3
+    )
     BEGIN
         INSERT INTO DifficultyLevels (Name, RankOrder)
         VALUES ('Avanzado', 3);
@@ -127,37 +145,73 @@ BEGIN TRY
         VALUES ('Critica-Evaluativa', 'Juicio critico y valoracion de ideas del texto.');
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM Phases WHERE Code = 'Preview')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM Phases
+        WHERE Code = 'Preview'
+           OR DefaultOrder = 1
+    )
     BEGIN
         INSERT INTO Phases (Code, DisplayName, DefaultOrder)
         VALUES ('Preview', 'Preview', 1);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM Phases WHERE Code = 'Question')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM Phases
+        WHERE Code = 'Question'
+           OR DefaultOrder = 2
+    )
     BEGIN
         INSERT INTO Phases (Code, DisplayName, DefaultOrder)
         VALUES ('Question', 'Question', 2);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM Phases WHERE Code = 'Read')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM Phases
+        WHERE Code = 'Read'
+           OR DefaultOrder = 3
+    )
     BEGIN
         INSERT INTO Phases (Code, DisplayName, DefaultOrder)
         VALUES ('Read', 'Read', 3);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM Phases WHERE Code = 'Reflect')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM Phases
+        WHERE Code = 'Reflect'
+           OR DefaultOrder = 4
+    )
     BEGIN
         INSERT INTO Phases (Code, DisplayName, DefaultOrder)
         VALUES ('Reflect', 'Reflect', 4);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM Phases WHERE Code = 'Recite')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM Phases
+        WHERE Code = 'Recite'
+           OR DefaultOrder = 5
+    )
     BEGIN
         INSERT INTO Phases (Code, DisplayName, DefaultOrder)
         VALUES ('Recite', 'Recite', 5);
     END;
 
-    IF NOT EXISTS (SELECT 1 FROM Phases WHERE Code = 'Review')
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM Phases
+        WHERE Code = 'Review'
+           OR DefaultOrder = 6
+    )
     BEGIN
         INSERT INTO Phases (Code, DisplayName, DefaultOrder)
         VALUES ('Review', 'Review', 6);
@@ -168,6 +222,8 @@ BEGIN TRY
         SELECT TOP (1) DifficultyLevelId
         FROM DifficultyLevels
         WHERE Name = 'Basico'
+           OR RankOrder = 1
+        ORDER BY CASE WHEN Name = 'Basico' THEN 0 ELSE 1 END, DifficultyLevelId
     );
 
     DECLARE @DifficultyIntermedioId TINYINT =
@@ -175,6 +231,8 @@ BEGIN TRY
         SELECT TOP (1) DifficultyLevelId
         FROM DifficultyLevels
         WHERE Name = 'Intermedio'
+           OR RankOrder = 2
+        ORDER BY CASE WHEN Name = 'Intermedio' THEN 0 ELSE 1 END, DifficultyLevelId
     );
 
     DECLARE @DifficultyAvanzadoId TINYINT =
@@ -182,6 +240,8 @@ BEGIN TRY
         SELECT TOP (1) DifficultyLevelId
         FROM DifficultyLevels
         WHERE Name = 'Avanzado'
+           OR RankOrder = 3
+        ORDER BY CASE WHEN Name = 'Avanzado' THEN 0 ELSE 1 END, DifficultyLevelId
     );
 
     DECLARE @DimensionLiteralId TINYINT =
