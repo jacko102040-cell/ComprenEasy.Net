@@ -13,10 +13,7 @@ namespace ReadingAdaptive.Infrastructure.Services;
 public sealed class AcademicFlowService : IAcademicFlowService
 {
     private const string CompletedStatus = "Completed";
-    private const string PretestStage = "Pretest";
     private const string ReadingsStage = "Readings";
-    private const string PosttestStage = "Posttest";
-    private const string CompletedStage = "Completed";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
     private readonly int _minimumReadingSessionsRequired;
@@ -59,15 +56,9 @@ public sealed class AcademicFlowService : IAcademicFlowService
             ? (DateTime?)null
             : latestPosttest.FinishedAt ?? latestPosttest.StartedAt;
 
-        var completedReadings = latestPretestFinishedAt.HasValue
-            ? attempts
-                .Where(attempt =>
-                    attempt.Assessment.AssessmentType == ReadingAssessmentTypes.ReadingPractice &&
-                    (attempt.FinishedAt ?? attempt.StartedAt) >= latestPretestFinishedAt.Value &&
-                    (!latestPosttestFinishedAt.HasValue ||
-                        (attempt.FinishedAt ?? attempt.StartedAt) <= latestPosttestFinishedAt.Value))
-                .ToList()
-            : [];
+        var completedReadings = attempts
+            .Where(attempt => attempt.Assessment.AssessmentType == ReadingAssessmentTypes.ReadingPractice)
+            .ToList();
 
         var latestReadingFinishedAt = completedReadings.Count == 0
             ? (DateTime?)null
@@ -75,23 +66,39 @@ public sealed class AcademicFlowService : IAcademicFlowService
                 .Select(attempt => attempt.FinishedAt ?? attempt.StartedAt)
                 .Max();
 
-        var hasCompletedPretest = latestPretest is not null;
-        var hasCompletedPosttest = latestPosttest is not null;
+        var activeReadings = await _dbContext.Readings
+            .AsNoTracking()
+            .Where(reading => reading.IsActive)
+            .OrderBy(reading => reading.Title)
+            .ThenBy(reading => reading.ReadingId)
+            .Select(reading => new ActiveReadingItem(reading.ReadingId, reading.Title))
+            .ToListAsync(cancellationToken);
+
+        var completedReadingIds = completedReadings
+            .Where(attempt => attempt.Assessment.ReadingId.HasValue)
+            .Select(attempt => attempt.Assessment.ReadingId!.Value)
+            .Distinct()
+            .ToHashSet();
+
+        var nextReading = activeReadings.FirstOrDefault(reading => !completedReadingIds.Contains(reading.ReadingId));
+
+        // Keep these flags friendly to the current frontend while making readings the true entry point.
+        var hasCompletedPretest = true;
+        var hasCompletedPosttest = false;
         var hasCompletedMinimumReadingIntervention = completedReadings.Count >= _minimumReadingSessionsRequired;
-        var canAccessReadings = hasCompletedPretest && !hasCompletedPosttest;
-        var canAccessPosttest = hasCompletedPretest && hasCompletedMinimumReadingIntervention && !hasCompletedPosttest;
-        var canAccessFinalComparison = hasCompletedPosttest;
+        var canAccessReadings = true;
+        var canAccessPosttest = false;
+        var canAccessFinalComparison = false;
+        var currentStage = ReadingsStage;
 
-        var currentStage = ResolveCurrentStage(
-            hasCompletedPretest,
-            hasCompletedMinimumReadingIntervention,
-            hasCompletedPosttest);
-
-        var (recommendedRoute, recommendedMessage) = ResolveRecommendedStep(currentStage);
+        var (recommendedRoute, recommendedMessage) = ResolveRecommendedStep(
+            nextReading,
+            activeReadings.Count,
+            completedReadingIds.Count);
 
         return new AcademicFlowSummaryDto(
             hasCompletedPretest,
-            latestPretestFinishedAt,
+            null,
             completedReadings.Count,
             _minimumReadingSessionsRequired,
             hasCompletedMinimumReadingIntervention,
@@ -99,7 +106,7 @@ public sealed class AcademicFlowService : IAcademicFlowService
             canAccessReadings,
             canAccessPosttest,
             hasCompletedPosttest,
-            latestPosttestFinishedAt,
+            null,
             canAccessFinalComparison,
             currentStage,
             recommendedRoute,
@@ -123,37 +130,36 @@ public sealed class AcademicFlowService : IAcademicFlowService
         }
     }
 
-    private static string ResolveCurrentStage(
-        bool hasCompletedPretest,
-        bool hasCompletedMinimumReadingIntervention,
-        bool hasCompletedPosttest)
+    private static (string Route, string Message) ResolveRecommendedStep(
+        ActiveReadingItem? nextReading,
+        int activeReadingsCount,
+        int completedReadingIdsCount)
     {
-        if (!hasCompletedPretest)
+        if (nextReading is not null)
         {
-            return PretestStage;
+            return (
+                $"/readings/{nextReading.ReadingId}",
+                $"Continua con el refuerzo lector en \"{nextReading.Title}\".");
         }
 
-        if (hasCompletedPosttest)
+        if (activeReadingsCount == 0)
         {
-            return CompletedStage;
+            return (
+                "/dashboard",
+                "No hay lecturas activas disponibles en este momento.");
         }
 
-        if (!hasCompletedMinimumReadingIntervention)
+        if (completedReadingIdsCount >= activeReadingsCount)
         {
-            return ReadingsStage;
+            return (
+                "/dashboard",
+                "Has completado las lecturas activas de refuerzo disponibles.");
         }
 
-        return PosttestStage;
+        return (
+            "/readings",
+            "Continua con tu practica de comprension lectora desde la lista de lecturas.");
     }
 
-    private static (string Route, string Message) ResolveRecommendedStep(string currentStage)
-    {
-        return currentStage switch
-        {
-            PretestStage => ("/pretests", "Tu siguiente paso academico es completar el pretest."),
-            ReadingsStage => ("/readings", "Continua con la intervencion de lecturas PQ4R."),
-            PosttestStage => ("/posttests", "Ya puedes pasar al posttest para medir tu avance."),
-            _ => ("/pre-post-comparison", "Tu cierre principal esta en la comparacion final pretest vs posttest.")
-        };
-    }
+    private sealed record ActiveReadingItem(int ReadingId, string Title);
 }

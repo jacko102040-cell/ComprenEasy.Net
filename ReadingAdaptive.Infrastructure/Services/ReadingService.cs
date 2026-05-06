@@ -386,22 +386,6 @@ public sealed class ReadingService : IReadingService
     private async Task EnsureReadingsAccessibleAsync(int studentId, CancellationToken cancellationToken)
     {
         await EnsureStudentAsync(studentId, cancellationToken);
-
-        var summary = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
-
-        if (summary.CanAccessReadings)
-        {
-            return;
-        }
-
-        if (summary.HasCompletedPosttest)
-        {
-            throw new ReadingValidationException(
-                "Reading intervention has already been closed. Review the final comparison instead.");
-        }
-
-        throw new ReadingValidationException(
-            "Reading intervention becomes available after completing the pretest.");
     }
 
     private async Task EnsureReadingExistsAsync(int readingId, CancellationToken cancellationToken)

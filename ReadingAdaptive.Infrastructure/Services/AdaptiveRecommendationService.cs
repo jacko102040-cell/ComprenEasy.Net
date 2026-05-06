@@ -5,7 +5,6 @@ using ReadingAdaptive.Application.Adaptive.Constants;
 using ReadingAdaptive.Application.Adaptive.Dtos;
 using ReadingAdaptive.Application.Adaptive.Exceptions;
 using ReadingAdaptive.Application.Adaptive.Interfaces;
-using ReadingAdaptive.Application.Evaluations.Constants;
 using ReadingAdaptive.Application.Readings.Constants;
 using ReadingAdaptive.Infrastructure.Persistence;
 using ReadingAdaptive.Infrastructure.Persistence.Entities;
@@ -359,91 +358,61 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
         int? preferredReadingId,
         CancellationToken cancellationToken)
     {
-        var summary = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
+        _ = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
+        return await BuildReadingSuggestionAsync(studentId, preferredReadingId, cancellationToken);
+    }
 
-        if (!summary.HasCompletedPretest)
-        {
-            return await BuildAssessmentSuggestionAsync(
-                AssessmentTypes.Pretest,
-                AdaptiveActivityTypes.Pretest,
-                "/pretests",
-                cancellationToken);
-        }
+    private async Task<SuggestedActivity> BuildReadingSuggestionAsync(
+        int studentId,
+        int? preferredReadingId,
+        CancellationToken cancellationToken)
+    {
+        var reading = await ResolveRecommendedReadingAsync(studentId, preferredReadingId, cancellationToken);
 
-        if (summary.HasCompletedPosttest)
+        if (reading is null)
         {
             return new SuggestedActivity(
-                AdaptiveActivityTypes.FinalComparison,
-                "/pre-post-comparison",
+                null,
+                "/dashboard",
                 null,
                 null,
                 null);
         }
 
-        if (!summary.HasCompletedMinimumReadingIntervention)
-        {
-            return await BuildReadingSuggestionAsync(preferredReadingId, cancellationToken);
-        }
-
-        return await BuildAssessmentSuggestionAsync(
-            AssessmentTypes.Posttest,
-            AdaptiveActivityTypes.Posttest,
-            "/posttests",
-            cancellationToken);
-    }
-
-    private async Task<SuggestedActivity> BuildAssessmentSuggestionAsync(
-        string assessmentType,
-        string activityType,
-        string route,
-        CancellationToken cancellationToken)
-    {
-        var assessment = await _dbContext.Assessments
-            .AsNoTracking()
-            .Where(item => item.IsActive && item.AssessmentType == assessmentType)
-            .OrderBy(item => item.Title)
-            .ThenBy(item => item.AssessmentId)
-            .Select(item => new
-            {
-                item.AssessmentId,
-                item.Title
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return new SuggestedActivity(
-            activityType,
-            route,
-            null,
-            assessment?.AssessmentId,
-            assessment?.Title);
-    }
-
-    private async Task<SuggestedActivity> BuildReadingSuggestionAsync(
-        int? preferredReadingId,
-        CancellationToken cancellationToken)
-    {
-        var reading = await ResolveRecommendedReadingAsync(preferredReadingId, cancellationToken);
-        var route = reading is null
-            ? "/readings"
-            : $"/readings/{reading.ReadingId}";
-
         return new SuggestedActivity(
             AdaptiveActivityTypes.Reading,
-            route,
-            reading?.ReadingId,
+            $"/readings/{reading.ReadingId}",
+            reading.ReadingId,
             null,
             null);
     }
 
     private async Task<RecommendedReading?> ResolveRecommendedReadingAsync(
+        int studentId,
         int? preferredReadingId,
         CancellationToken cancellationToken)
     {
+        var completedReadingIds = await _dbContext.AssessmentAttempts
+            .AsNoTracking()
+            .Where(item =>
+                item.StudentId == studentId &&
+                item.Status == CompletedStatus &&
+                item.Assessment.AssessmentType == ReadingAssessmentTypes.ReadingPractice &&
+                item.Assessment.ReadingId != null)
+            .Select(item => item.Assessment.ReadingId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var completedReadingIdSet = completedReadingIds.ToHashSet();
+
         if (preferredReadingId.HasValue)
         {
             var preferredReading = await _dbContext.Readings
                 .AsNoTracking()
-                .Where(item => item.ReadingId == preferredReadingId.Value && item.IsActive)
+                .Where(item =>
+                    item.ReadingId == preferredReadingId.Value &&
+                    item.IsActive &&
+                    !completedReadingIdSet.Contains(item.ReadingId))
                 .Select(item => new RecommendedReading(item.ReadingId))
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -455,7 +424,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         return await _dbContext.Readings
             .AsNoTracking()
-            .Where(item => item.IsActive)
+            .Where(item => item.IsActive && !completedReadingIdSet.Contains(item.ReadingId))
             .OrderBy(item => item.Title)
             .ThenBy(item => item.ReadingId)
             .Select(item => new RecommendedReading(item.ReadingId))
@@ -467,7 +436,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
         byte RecommendedDifficultyLevelId);
 
     private sealed record SuggestedActivity(
-        string RecommendedActivityType,
+        string? RecommendedActivityType,
         string RecommendedRoute,
         int? RecommendedReadingId,
         int? RecommendedAssessmentId,
