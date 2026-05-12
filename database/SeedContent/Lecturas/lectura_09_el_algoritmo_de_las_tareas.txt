@@ -1,0 +1,201 @@
+LECTURA 9: EL ALGORITMO DE LAS TAREAS
+
+DATOS GENERALES
+Nivel: Avanzado
+Tipo de texto: Argumentativo / reflexivo
+Título: El algoritmo de las tareas
+Extensión sugerida: 450 a 540 palabras
+Dimensiones trabajadas: Literal, inferencial y crítica-evaluativa
+Objetivo de lectura: Analizar el uso de inteligencia artificial en el aprendizaje, identificar ventajas y límites de un sistema adaptativo, y valorar la importancia del criterio humano en la educación.
+
+SINOPSIS PARA EL SISTEMA
+Una escuela prueba un sistema que recomienda ejercicios según los resultados de cada estudiante. Algunos mejoran rápidamente, pero otros se preguntan si una máquina puede comprender todo lo que ocurre cuando alguien aprende.
+
+TEXTO COMPLETO
+
+EL ALGORITMO DE LAS TAREAS
+
+Cuando la escuela anunció que usaría un sistema inteligente para recomendar tareas, muchos estudiantes pensaron que sería una forma de recibir menos ejercicios. Sin embargo, la idea era distinta: el sistema revisaría los resultados de cada estudiante y sugeriría actividades según sus avances y dificultades.
+
+La primera semana, todos resolvieron una lectura breve y respondieron preguntas. Luego, el sistema mostró recomendaciones diferentes. A quienes habían fallado preguntas literales les propuso ejercicios para identificar datos explícitos. A quienes tuvieron problemas con preguntas inferenciales les ofreció textos donde debían relacionar pistas. Y a quienes respondieron con dificultad las preguntas críticas les recomendó actividades para comparar opiniones y justificar respuestas.
+
+Al inicio, varios estudiantes se sintieron motivados. Paula, por ejemplo, recibió lecturas más cortas y preguntas guiadas. Después de algunos días, empezó a responder con mayor seguridad. En cambio, Joaquín se sorprendió porque el sistema le sugirió textos más difíciles, aunque él sentía que no había comprendido del todo la lectura anterior.
+
+Durante una tutoría, la profesora pidió comentar la experiencia. Algunos dijeron que el sistema era útil porque no todos necesitaban practicar lo mismo. Otros señalaron que una recomendación basada solo en respuestas correctas podía dejar fuera detalles importantes: cansancio, nervios, falta de tiempo o incluso una mala lectura de la pregunta.
+
+La profesora explicó que el algoritmo no era un juez perfecto, sino una herramienta de apoyo. Podía detectar patrones, como errores repetidos o avances en ciertos niveles de comprensión, pero no podía conocer por completo lo que una persona sentía o pensaba al aprender. Por eso, las recomendaciones debían combinarse con la revisión del estudiante y la orientación del docente.
+
+Después de la conversación, Joaquín revisó sus respuestas y descubrió que había fallado no porque el texto fuera imposible, sino porque leyó demasiado rápido. Decidió repetir una actividad de nivel intermedio antes de intentar otra más avanzada. El sistema registró su nuevo intento y ajustó la recomendación.
+
+Al terminar el mes, la clase no llegó a una conclusión simple. El sistema había ayudado a organizar prácticas y mostrar rutas diferentes, pero también quedó claro que aprender no era solo seguir lo que una pantalla indicaba. Un algoritmo podía sugerir caminos; aun así, cada estudiante necesitaba detenerse, revisar sus errores, pedir ayuda cuando fuera necesario y participar activamente en su propio aprendizaje.
+
+Cantidad aproximada: 487 palabras.
+
+FICHA PQ4R DE LA LECTURA
+
+Preview:
+Anticipar el tema de inteligencia artificial y aprendizaje a partir del título.
+
+Question:
+Formular una pregunta sobre cómo un sistema puede recomendar tareas.
+
+Read:
+Identificar cómo funcionaba el sistema y qué recomendaciones ofrecía.
+
+Reflect:
+Inferir ventajas y límites del uso de algoritmos en el aprendizaje.
+
+Recite:
+Recordar las ideas principales sobre el sistema, los estudiantes y la profesora.
+
+Review:
+Valorar críticamente el papel de la tecnología y del criterio humano en la educación.
+
+PREGUNTAS DE LA LECTURA
+
+Distribución:
+- Literal: 3 preguntas
+- Inferencial: 4 preguntas
+- Crítica-evaluativa: 4 preguntas
+- Total: 11 preguntas
+
+PREGUNTA 1
+Fase: Preview
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: A partir del título, ¿qué tema podría tratar principalmente la lectura?
+
+Opciones:
+A. Un sistema que usa datos para recomendar tareas según el aprendizaje de los estudiantes. [CORRECTA]
+B. Un estudiante que inventa una tarea para evitar ir al colegio.
+C. Una competencia para resolver ejercicios en menos tiempo que otros salones.
+D. Un robot que reemplaza completamente a todos los docentes.
+
+PREGUNTA 2
+Fase: Question
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: ¿Qué pregunta orienta mejor la lectura del texto?
+
+Opciones:
+A. ¿Cómo puede un sistema inteligente ayudar a practicar sin reemplazar el criterio humano? [CORRECTA]
+B. ¿Cuántas computadoras tiene exactamente la escuela?
+C. ¿Qué estudiante terminó primero todas las actividades?
+D. ¿Qué marca de pantalla usaba la profesora durante la tutoría?
+
+PREGUNTA 3
+Fase: Read
+Dimensión: Literal
+Puntaje: 100
+Pregunta: ¿Qué hacía el sistema después de revisar los resultados de cada estudiante?
+
+Opciones:
+A. Sugerir actividades según los avances y dificultades de cada estudiante. [CORRECTA]
+B. Eliminar todas las tareas para que nadie practicara.
+C. Cambiar automáticamente las notas finales del curso.
+D. Elegir al mejor estudiante para dirigir la clase.
+
+PREGUNTA 4
+Fase: Read
+Dimensión: Literal
+Puntaje: 100
+Pregunta: ¿Qué tipo de ejercicios recibían quienes fallaban preguntas literales?
+
+Opciones:
+A. Ejercicios para identificar datos explícitos. [CORRECTA]
+B. Actividades para decorar el aula.
+C. Textos sin preguntas ni instrucciones.
+D. Problemas de matemática avanzada.
+
+PREGUNTA 5
+Fase: Read
+Dimensión: Literal
+Puntaje: 100
+Pregunta: ¿Qué le ocurrió a Paula durante los primeros días de uso del sistema?
+
+Opciones:
+A. Recibió lecturas más cortas y empezó a responder con mayor seguridad. [CORRECTA]
+B. Dejó de asistir a clases porque no quería usar tecnología.
+C. Recibió textos más difíciles desde el primer día y se negó a leerlos.
+D. Fue elegida para corregir las respuestas de todo el salón.
+
+PREGUNTA 6
+Fase: Reflect
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: ¿Por qué Joaquín se sorprendió con la recomendación del sistema?
+
+Opciones:
+A. Porque le sugirió textos más difíciles aunque él sentía que aún no comprendía bien la lectura anterior. [CORRECTA]
+B. Porque el sistema le quitó todas las actividades de lectura.
+C. Porque la profesora le pidió que dejara de participar en clase.
+D. Porque recibió exactamente las mismas tareas que Paula.
+
+PREGUNTA 7
+Fase: Reflect
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: ¿Qué límite del sistema señalaron algunos estudiantes durante la tutoría?
+
+Opciones:
+A. Que una recomendación basada solo en respuestas correctas podía ignorar factores como cansancio, nervios o falta de tiempo. [CORRECTA]
+B. Que el sistema no podía encenderse porque no había electricidad en la escuela.
+C. Que todos los estudiantes siempre necesitaban exactamente las mismas tareas.
+D. Que los algoritmos solo sirven para juegos y no pueden mostrar ningún patrón.
+
+PREGUNTA 8
+Fase: Reflect
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: ¿Qué quiso decir la profesora al afirmar que el algoritmo no era un juez perfecto?
+
+Opciones:
+A. Que podía apoyar con patrones de aprendizaje, pero no comprender por completo todo lo que vive un estudiante. [CORRECTA]
+B. Que el sistema debía decidir solo todas las actividades sin intervención humana.
+C. Que los estudiantes no debían revisar nunca sus errores.
+D. Que las recomendaciones tecnológicas siempre son incorrectas.
+
+PREGUNTA 9
+Fase: Recite
+Dimensión: Crítica-evaluativa
+Puntaje: 100
+Pregunta: ¿Cuál de estas ideas resume mejor el sentido central de la lectura?
+
+Opciones:
+A. La tecnología puede orientar la práctica, pero el aprendizaje también necesita reflexión, revisión y acompañamiento. [CORRECTA]
+B. Los sistemas inteligentes siempre entienden mejor que los docentes y estudiantes.
+C. La mejor forma de aprender es aceptar cualquier recomendación sin pensar.
+D. Las tareas adaptativas solo sirven para que los estudiantes reciban menos trabajo.
+
+PREGUNTA 10
+Fase: Review
+Dimensión: Crítica-evaluativa
+Puntaje: 100
+Pregunta: ¿Qué decisión de Joaquín demuestra una actitud responsable frente a la recomendación del sistema?
+
+Opciones:
+A. Revisar sus respuestas, reconocer que leyó rápido y repetir una actividad intermedia antes de avanzar. [CORRECTA]
+B. Ignorar sus errores porque el sistema debía resolverlos por él.
+C. Abandonar todas las lecturas al recibir una actividad difícil.
+D. Pedir que todos reciban exactamente las mismas tareas aunque tengan necesidades distintas.
+
+PREGUNTA 11
+Fase: Review
+Dimensión: Crítica-evaluativa
+Puntaje: 100
+Pregunta: ¿Cuál es una conclusión crítica adecuada sobre el uso de algoritmos en educación?
+
+Opciones:
+A. Pueden ser útiles si apoyan la práctica personalizada, pero deben combinarse con criterio humano y participación del estudiante. [CORRECTA]
+B. Deben reemplazar por completo a docentes, estudiantes y cualquier forma de diálogo.
+C. Son inútiles porque nunca pueden reconocer ningún avance o dificultad.
+D. Solo deben usarse para decidir quién merece estudiar y quién no.
+
+RESUMEN PARA CARGAR EN EL SISTEMA
+Lectura: 1
+Fases PQ4R: 6
+Preguntas: 11
+Opciones: 44
+Respuestas correctas: 11
+Dificultad: Avanzado
+Tipo: Argumentativo / reflexivo

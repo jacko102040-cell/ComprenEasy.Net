@@ -5,6 +5,7 @@ using ReadingAdaptive.Application.Adaptive.Constants;
 using ReadingAdaptive.Application.Adaptive.Dtos;
 using ReadingAdaptive.Application.Adaptive.Exceptions;
 using ReadingAdaptive.Application.Adaptive.Interfaces;
+using ReadingAdaptive.Application.Evaluations.Constants;
 using ReadingAdaptive.Application.Readings.Constants;
 using ReadingAdaptive.Infrastructure.Persistence;
 using ReadingAdaptive.Infrastructure.Persistence.Entities;
@@ -358,7 +359,32 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
         int? preferredReadingId,
         CancellationToken cancellationToken)
     {
-        _ = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
+        var summary = await _academicFlowService.GetCurrentSummaryAsync(studentId, cancellationToken);
+
+        if (summary.CanAccessPosttest && !summary.HasCompletedPosttest)
+        {
+            var posttestAssessment = await _dbContext.Assessments
+                .AsNoTracking()
+                .Where(item =>
+                    item.IsActive &&
+                    item.AssessmentType == AssessmentTypes.Posttest)
+                .OrderBy(item => item.Title)
+                .ThenBy(item => item.AssessmentId)
+                .Select(item => new
+                {
+                    item.AssessmentId,
+                    item.Title
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return new SuggestedActivity(
+                AdaptiveActivityTypes.Posttest,
+                "/posttests",
+                null,
+                posttestAssessment?.AssessmentId,
+                posttestAssessment?.Title);
+        }
+
         return await BuildReadingSuggestionAsync(studentId, preferredReadingId, cancellationToken);
     }
 

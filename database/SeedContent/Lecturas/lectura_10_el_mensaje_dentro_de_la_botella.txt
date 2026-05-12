@@ -1,0 +1,144 @@
+LECTURA 10: EL MENSAJE DENTRO DE LA BOTELLA
+
+DATOS GENERALES
+Nivel: Básico
+Tipo de texto: Narrativo / cotidiano
+Título: El mensaje dentro de la botella
+Extensión sugerida: 180 a 240 palabras
+Dimensiones trabajadas: Literal, inferencial y crítica-evaluativa
+Objetivo de lectura: Identificar hechos principales, inferir la intención de un mensaje y valorar el cuidado de los espacios compartidos.
+
+SINOPSIS PARA EL SISTEMA
+Durante una limpieza del patio escolar, un grupo encuentra una botella con un papel enrollado. Al leerlo, descubren que no es un tesoro, sino una lista de deseos escrita por estudiantes de años anteriores.
+
+TEXTO COMPLETO
+
+EL MENSAJE DENTRO DE LA BOTELLA
+
+El sábado por la mañana, algunos estudiantes fueron al colegio para ayudar en la limpieza del patio. Había hojas secas, envolturas y botellas olvidadas cerca de las bancas. Mientras recogían los residuos, Tomás encontró una botella transparente con un papel enrollado dentro.
+
+—¡Parece un mensaje secreto! —dijo, levantándola con cuidado.
+
+La profesora abrió la botella y sacó el papel. No era un mapa del tesoro, como algunos imaginaron, sino una lista escrita con letra pequeña. Decía: “Deseos para nuestro patio: más sombra, menos basura, juegos pintados en el suelo y un lugar para leer”.
+
+Micaela preguntó quién había escrito eso. La profesora explicó que, años atrás, otro grupo de estudiantes había realizado una actividad parecida y dejó sus ideas dentro de la botella para que alguien las encontrara después.
+
+El grupo miró alrededor. Algunas cosas seguían igual: todavía había basura en ciertas zonas y pocas bancas con sombra. Entonces decidieron no volver a esconder el papel. Lo pegaron en un mural y agregaron una nueva lista con propuestas actuales.
+
+Al terminar la jornada, Tomás dijo que la botella no guardaba un tesoro de monedas, pero sí una pista importante: el patio también necesitaba que alguien lo escuchara.
+
+Cantidad aproximada: 214 palabras.
+
+FICHA PQ4R DE LA LECTURA
+
+Preview:
+Anticipar qué puede contener la botella a partir del título.
+
+Question:
+Formular una pregunta sobre el mensaje encontrado.
+
+Read:
+Identificar personajes, lugar, objeto encontrado y contenido del mensaje.
+
+Reflect:
+Inferir por qué el mensaje era importante para el grupo actual.
+
+Recite:
+Recordar las acciones principales realizadas por los estudiantes.
+
+Review:
+Valorar la importancia de cuidar y mejorar los espacios compartidos.
+
+PREGUNTAS DE LA LECTURA
+
+Distribución:
+- Literal: 3 preguntas
+- Inferencial: 2 preguntas
+- Crítica-evaluativa: 2 preguntas
+- Total: 7 preguntas
+
+PREGUNTA 1
+Fase: Preview
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: A partir del título, ¿qué podría ocurrir en la lectura?
+
+Opciones:
+A. Un grupo encuentra una botella con un mensaje en su interior. [CORRECTA]
+B. Un estudiante compra una botella nueva para su lonchera.
+C. Una profesora enseña a fabricar botellas de vidrio.
+
+PREGUNTA 2
+Fase: Question
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: ¿Qué pregunta ayuda mejor a leer el texto con propósito?
+
+Opciones:
+A. ¿Qué decía el mensaje encontrado y por qué era importante? [CORRECTA]
+B. ¿Cuántas botellas compraron los estudiantes ese día?
+C. ¿De qué color eran todas las bancas del colegio?
+
+PREGUNTA 3
+Fase: Read
+Dimensión: Literal
+Puntaje: 100
+Pregunta: ¿Para qué fueron algunos estudiantes al colegio el sábado?
+
+Opciones:
+A. Para ayudar en la limpieza del patio. [CORRECTA]
+B. Para rendir un examen de matemática.
+C. Para participar en una competencia de canto.
+
+PREGUNTA 4
+Fase: Read
+Dimensión: Literal
+Puntaje: 100
+Pregunta: ¿Qué encontró Tomás cerca de las bancas?
+
+Opciones:
+A. Una botella transparente con un papel enrollado dentro. [CORRECTA]
+B. Una mochila azul con una brújula.
+C. Un cuaderno rojo lleno de tareas.
+
+PREGUNTA 5
+Fase: Read
+Dimensión: Literal
+Puntaje: 100
+Pregunta: ¿Qué decía la lista encontrada en la botella?
+
+Opciones:
+A. Deseos para mejorar el patio, como más sombra, menos basura y juegos pintados. [CORRECTA]
+B. Instrucciones para buscar monedas enterradas en el patio.
+C. Nombres de estudiantes que debían limpiar el salón.
+
+PREGUNTA 6
+Fase: Reflect
+Dimensión: Inferencial
+Puntaje: 100
+Pregunta: ¿Por qué el grupo decidió pegar el mensaje en un mural?
+
+Opciones:
+A. Porque querían que otros vieran las ideas y agregaran nuevas propuestas. [CORRECTA]
+B. Porque la botella se rompió antes de terminar la limpieza.
+C. Porque la profesora les pidió ocultar el mensaje otra vez.
+
+PREGUNTA 7
+Fase: Review
+Dimensión: Crítica-evaluativa
+Puntaje: 100
+Pregunta: ¿Qué enseñanza se relaciona mejor con la lectura?
+
+Opciones:
+A. Los espacios compartidos pueden mejorar si las personas observan sus necesidades y proponen soluciones. [CORRECTA]
+B. Los mensajes antiguos siempre deben guardarse sin leerlos.
+C. La limpieza del colegio solo es responsabilidad de los adultos.
+
+RESUMEN PARA CARGAR EN EL SISTEMA
+Lectura: 1
+Fases PQ4R: 6
+Preguntas: 7
+Opciones: 21
+Respuestas correctas: 7
+Dificultad: Básico
+Tipo: Narrativo / cotidiano

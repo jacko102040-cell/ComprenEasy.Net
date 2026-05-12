@@ -14,6 +14,7 @@ public sealed class AcademicFlowService : IAcademicFlowService
 {
     private const string CompletedStatus = "Completed";
     private const string ReadingsStage = "Readings";
+    private const string CompletedStage = "Completed";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
     private readonly int _minimumReadingSessionsRequired;
@@ -49,9 +50,6 @@ public sealed class AcademicFlowService : IAcademicFlowService
         var latestPosttest = attempts.FirstOrDefault(attempt =>
             attempt.Assessment.AssessmentType == AssessmentTypes.Posttest);
 
-        var latestPretestFinishedAt = latestPretest is null
-            ? (DateTime?)null
-            : latestPretest.FinishedAt ?? latestPretest.StartedAt;
         var latestPosttestFinishedAt = latestPosttest is null
             ? (DateTime?)null
             : latestPosttest.FinishedAt ?? latestPosttest.StartedAt;
@@ -84,14 +82,17 @@ public sealed class AcademicFlowService : IAcademicFlowService
 
         // Keep these flags friendly to the current frontend while making readings the true entry point.
         var hasCompletedPretest = true;
-        var hasCompletedPosttest = false;
+        var hasCompletedPosttest = latestPosttest is not null;
         var hasCompletedMinimumReadingIntervention = completedReadings.Count >= _minimumReadingSessionsRequired;
         var canAccessReadings = true;
-        var canAccessPosttest = false;
+        var canAccessPosttest = hasCompletedMinimumReadingIntervention && !hasCompletedPosttest;
         var canAccessFinalComparison = false;
-        var currentStage = ReadingsStage;
+        var currentStage = hasCompletedPosttest
+            ? CompletedStage
+            : ReadingsStage;
 
         var (recommendedRoute, recommendedMessage) = ResolveRecommendedStep(
+            canAccessPosttest,
             nextReading,
             activeReadings.Count,
             completedReadingIds.Count);
@@ -106,7 +107,7 @@ public sealed class AcademicFlowService : IAcademicFlowService
             canAccessReadings,
             canAccessPosttest,
             hasCompletedPosttest,
-            null,
+            latestPosttestFinishedAt,
             canAccessFinalComparison,
             currentStage,
             recommendedRoute,
@@ -131,10 +132,18 @@ public sealed class AcademicFlowService : IAcademicFlowService
     }
 
     private static (string Route, string Message) ResolveRecommendedStep(
+        bool canAccessPosttest,
         ActiveReadingItem? nextReading,
         int activeReadingsCount,
         int completedReadingIdsCount)
     {
+        if (canAccessPosttest)
+        {
+            return (
+                "/posttests",
+                "Has completado el minimo de sesiones de refuerzo lector. Ya puedes rendir el posttest final.");
+        }
+
         if (nextReading is not null)
         {
             return (

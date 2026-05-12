@@ -18,8 +18,6 @@ public sealed class EvaluationService : IEvaluationService
     private const string CompletedStatus = "Completed";
     private const string InProgressStatus = "InProgress";
     private const string ReadingsStage = "Readings";
-    private const string CompletedStage = "Completed";
-
     private readonly ReadingAdaptiveDbContext _dbContext;
     private readonly IAcademicFlowService _academicFlowService;
     private readonly IAdaptiveRecommendationService _adaptiveRecommendationService;
@@ -736,47 +734,23 @@ public sealed class EvaluationService : IEvaluationService
 
         if (string.Equals(assessmentType, AssessmentTypes.Pretest, StringComparison.Ordinal))
         {
-            if (string.Equals(summary.CurrentStage, AssessmentTypes.Pretest, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            if (summary.HasCompletedPretest)
-            {
-                throw new EvaluationValidationException(
-                    "Pretest is no longer available because it has already been completed.");
-            }
-
-            if (string.Equals(summary.CurrentStage, ReadingsStage, StringComparison.Ordinal))
-            {
-                throw new EvaluationValidationException(
-                    "Pretest is only available during the pretest stage.");
-            }
-
             throw new EvaluationValidationException(
-                "Pretest is not available in the current academic stage.");
+                "Pretest is not available in the current academic flow.");
         }
 
-        if (string.Equals(summary.CurrentStage, AssessmentTypes.Posttest, StringComparison.Ordinal) &&
-            summary.CanAccessPosttest)
+        if (summary.CanAccessPosttest)
         {
             return;
         }
 
-        if (summary.HasCompletedPosttest || string.Equals(summary.CurrentStage, CompletedStage, StringComparison.Ordinal))
+        if (summary.HasCompletedPosttest)
         {
             throw new EvaluationValidationException(
-                "Posttest has already been completed. Review the final comparison instead.");
-        }
-
-        if (!summary.HasCompletedPretest)
-        {
-            throw new EvaluationValidationException(
-                "Posttest is not available until the pretest stage has been completed.");
+                "Posttest has already been completed.");
         }
 
         throw new EvaluationValidationException(
-            "Posttest is only available after completing the minimum reading intervention and reaching the posttest stage.");
+            "Posttest is only available after completing the minimum reading intervention.");
     }
 
     private async Task<ComparisonMetrics> BuildComparisonMetricsAsync(

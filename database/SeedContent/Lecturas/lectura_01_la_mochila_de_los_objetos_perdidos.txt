@@ -1,0 +1,132 @@
+LECTURA 1: LA MOCHILA DE LOS OBJETOS PERDIDOS
+
+DATOS GENERALES
+
+Nivel: Básico
+Tipo de texto: Narrativo
+Título: La mochila de los objetos perdidos
+Extensión sugerida: 180 a 220 palabras
+Dimensiones trabajadas: Literal, inferencial y crítica-evaluativa
+Objetivo de lectura: Identificar pistas del texto, reconocer acciones de los personajes e interpretar decisiones responsables.
+
+SINOPSIS PARA EL SISTEMA
+
+Una mochila aparece en el aula con una brújula, una llave pequeña y una libreta llena de dibujos. Tres compañeros deciden descubrir a quién pertenece antes de que termine la jornada escolar.
+
+TEXTO COMPLETO
+
+La mochila de los objetos perdidos
+
+Al terminar el recreo, Valeria encontró una mochila azul debajo de una carpeta vacía. No tenía nombre, pero dentro había una brújula, una llave pequeña y una libreta con dibujos de árboles, ventanas y un perro con manchas.
+
+—Tal vez es de alguien nuevo —dijo Mateo, mirando la brújula.
+
+Sofía revisó la libreta con cuidado. En la última página había un dibujo del patio del colegio y una flecha que apuntaba hacia la biblioteca. Los tres fueron hasta allí y preguntaron si alguien había perdido una mochila, pero nadie respondió.
+
+Cuando estaban por regresar al salón, escucharon a un niño de otro grado decir que había dejado sus cosas mientras buscaba un libro de mapas. Valeria le preguntó por el color de su mochila. El niño sonrió y respondió:
+
+—Azul, con una brújula que me regaló mi abuelo.
+
+Mateo le mostró la mochila y el niño la reconoció de inmediato. Agradeció varias veces y explicó que la llave era de una caja donde guardaba sus lápices.
+
+Al volver al aula, Sofía dijo que no habían resuelto un gran misterio, pero sí habían hecho algo importante: mirar con atención antes de sacar conclusiones.
+
+Cantidad aproximada: 206 palabras.
+
+FICHA PQ4R DE LA LECTURA
+
+Preview: Anticipar de qué tratará la historia a partir del título.
+Question: Formular una pregunta inicial sobre el problema del texto.
+Read: Identificar información explícita sobre objetos, personajes y acciones.
+Reflect: Interpretar cómo las pistas ayudaron a resolver la situación.
+Recite: Recordar las ideas principales de la historia.
+Review: Valorar la decisión de los personajes y relacionarla con una acción responsable.
+
+DISTRIBUCIÓN DE PREGUNTAS
+
+Literal: 3 preguntas
+Inferencial: 2 preguntas
+Crítica-evaluativa: 2 preguntas
+Total: 7 preguntas
+
+PREGUNTAS DE LA LECTURA
+
+PREGUNTA 1
+Fase: Preview
+Dimensión: Inferencial
+Pregunta: A partir del título, ¿qué situación podría ocurrir en la historia?
+Puntaje: 100
+Opciones:
+A. Unos estudiantes intentarán descubrir a quién pertenece una mochila. [Correcta]
+B. Un grupo organizará una competencia de mochilas.
+C. Una profesora enseñará a coser una mochila nueva.
+
+PREGUNTA 2
+Fase: Question
+Dimensión: Inferencial
+Pregunta: ¿Qué pregunta ayuda mejor a iniciar la lectura?
+Puntaje: 100
+Opciones:
+A. ¿Cuántos libros hay en la biblioteca?
+B. ¿Quién perdió la mochila y cómo podrán encontrarlo? [Correcta]
+C. ¿Por qué todos los estudiantes usan mochila azul?
+
+PREGUNTA 3
+Fase: Read
+Dimensión: Literal
+Pregunta: ¿Dónde encontró Valeria la mochila azul?
+Puntaje: 100
+Opciones:
+A. Debajo de una carpeta vacía. [Correcta]
+B. Encima de una mesa de la biblioteca.
+C. Junto a la puerta del colegio.
+
+PREGUNTA 4
+Fase: Read
+Dimensión: Literal
+Pregunta: ¿Qué objetos había dentro de la mochila?
+Puntaje: 100
+Opciones:
+A. Una brújula, una llave pequeña y una libreta con dibujos. [Correcta]
+B. Un celular, una pelota y una botella de agua.
+C. Un cuaderno roto, una regla y una lonchera.
+
+PREGUNTA 5
+Fase: Reflect
+Dimensión: Literal
+Pregunta: ¿Qué pista llevó a los estudiantes hacia la biblioteca?
+Puntaje: 100
+Opciones:
+A. Una nota escrita por la profesora.
+B. Una flecha dibujada en la última página de la libreta. [Correcta]
+C. Una llamada por los parlantes del colegio.
+
+PREGUNTA 6
+Fase: Recite
+Dimensión: Crítica-evaluativa
+Pregunta: ¿Cuál de estas ideas resume mejor la acción de Valeria, Mateo y Sofía?
+Puntaje: 100
+Opciones:
+A. Decidieron quedarse con la mochila porque no tenía nombre.
+B. Observaron las pistas y buscaron al dueño de la mochila. [Correcta]
+C. Ignoraron la mochila porque no era de su salón.
+
+PREGUNTA 7
+Fase: Review
+Dimensión: Crítica-evaluativa
+Pregunta: ¿Qué enseñanza se relaciona mejor con la decisión de los estudiantes?
+Puntaje: 100
+Opciones:
+A. Es mejor sacar conclusiones rápidas cuando algo parece extraño.
+B. Observar con atención puede ayudar a resolver una situación de forma responsable. [Correcta]
+C. Los objetos perdidos siempre deben dejarse donde fueron encontrados.
+
+RESUMEN PARA CARGAR EN EL SISTEMA
+
+Lectura: 1
+Fases PQ4R: 6
+Preguntas: 7
+Opciones: 21
+Respuestas correctas: 7
+Dificultad: Básico
+Tipo: Narrativo
