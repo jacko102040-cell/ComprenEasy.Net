@@ -14,6 +14,7 @@ public sealed class AcademicFlowService : IAcademicFlowService
 {
     private const string CompletedStatus = "Completed";
     private const string ReadingsStage = "Readings";
+    private const string PosttestStage = "Posttest";
     private const string CompletedStage = "Completed";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
@@ -89,7 +90,9 @@ public sealed class AcademicFlowService : IAcademicFlowService
         var canAccessFinalComparison = false;
         var currentStage = hasCompletedPosttest
             ? CompletedStage
-            : ReadingsStage;
+            : canAccessPosttest
+                ? PosttestStage
+                : ReadingsStage;
 
         var (recommendedRoute, recommendedMessage) = ResolveRecommendedStep(
             canAccessPosttest,

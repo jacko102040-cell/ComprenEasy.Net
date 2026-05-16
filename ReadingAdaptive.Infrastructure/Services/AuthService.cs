@@ -70,7 +70,8 @@ public sealed class AuthService : IAuthService
         {
             StudentId = user.UserId,
             Grade = request.Grade ?? 1,
-            Section = section
+            Section = section,
+            IsEnabledForTest = true
         };
 
         _dbContext.Students.Add(student);

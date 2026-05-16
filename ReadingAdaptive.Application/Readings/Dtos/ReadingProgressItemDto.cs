@@ -1,0 +1,27 @@
+namespace ReadingAdaptive.Application.Readings.Dtos;
+
+public sealed record ReadingProgressItemDto(
+    int ReadingId,
+    string Title,
+    string? Summary,
+    string? ImageUrl,
+    byte DifficultyLevelId,
+    string DifficultyLevelName,
+    int? EstimatedMinutes,
+    long? AttemptId,
+    byte? AttemptNumber,
+    string Status,
+    DateTime? StartedAt,
+    DateTime? FinishedAt,
+    decimal CompletionPercentage,
+    decimal? TotalScore,
+    decimal? LiteralScore,
+    decimal? InferentialScore,
+    decimal? CriticalScore,
+    int? TotalCorrect,
+    int? TotalErrors,
+    int TotalQuestions,
+    int AnsweredQuestions,
+    int TotalTimeSeconds,
+    string? ResultRoute,
+    string ActionRoute);

@@ -17,6 +17,7 @@ public sealed class ReadingService : IReadingService
 {
     private const string CompletedStatus = "Completed";
     private const string InProgressStatus = "InProgress";
+    private const string NotStartedStatus = "NotStarted";
     private const string PendingStatus = "Pending";
     private const string ImmediateFeedbackType = "Immediate";
     private const string FinalFeedbackType = "Final";
@@ -56,6 +57,169 @@ public sealed class ReadingService : IReadingService
                 reading.EstimatedMinutes,
                 reading.ReadingPhases.Count(phase => phase.IsEnabled)))
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ReadingProgressSummaryDto> GetReadingProgressAsync(
+        int studentId,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureReadingsAccessibleAsync(studentId, cancellationToken);
+
+        var readings = await _dbContext.Readings
+            .AsNoTracking()
+            .Where(reading => reading.IsActive)
+            .OrderBy(reading => reading.Title)
+            .Select(reading => new ReadingProgressReadingRow(
+                reading.ReadingId,
+                reading.Title,
+                reading.Summary,
+                reading.ImageUrl,
+                reading.DifficultyLevelId,
+                reading.DifficultyLevel.Name,
+                reading.EstimatedMinutes,
+                reading.Assessments
+                    .Where(assessment => assessment.AssessmentType == ReadingAssessmentTypes.ReadingPractice)
+                    .OrderByDescending(assessment => assessment.IsActive)
+                    .ThenByDescending(assessment => assessment.CreatedAt)
+                    .Select(assessment => (int?)assessment.AssessmentId)
+                    .FirstOrDefault()))
+            .ToListAsync(cancellationToken);
+
+        var assessmentIds = readings
+            .Where(reading => reading.AssessmentId.HasValue)
+            .Select(reading => reading.AssessmentId!.Value)
+            .Distinct()
+            .ToList();
+
+        var questionCountsByAssessmentId = assessmentIds.Count == 0
+            ? new Dictionary<int, int>()
+            : await _dbContext.AssessmentQuestions
+                .AsNoTracking()
+                .Where(question =>
+                    assessmentIds.Contains(question.AssessmentId) &&
+                    question.IsActive &&
+                    question.PhaseId != null)
+                .GroupBy(question => question.AssessmentId)
+                .Select(group => new
+                {
+                    AssessmentId = group.Key,
+                    TotalQuestions = group.Count()
+                })
+                .ToDictionaryAsync(
+                    item => item.AssessmentId,
+                    item => item.TotalQuestions,
+                    cancellationToken);
+
+        var attempts = assessmentIds.Count == 0
+            ? new List<AssessmentAttempt>()
+            : await _dbContext.AssessmentAttempts
+                .AsNoTracking()
+                .Where(attempt =>
+                    attempt.StudentId == studentId &&
+                    assessmentIds.Contains(attempt.AssessmentId) &&
+                    (attempt.Status == CompletedStatus || attempt.Status == InProgressStatus))
+                .OrderByDescending(attempt => attempt.AttemptNumber)
+                .ThenByDescending(attempt => attempt.StartedAt)
+                .ThenByDescending(attempt => attempt.AttemptId)
+                .ToListAsync(cancellationToken);
+
+        var latestAttemptByAssessmentId = attempts
+            .GroupBy(attempt => attempt.AssessmentId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        var items = new List<ReadingProgressItemDto>(readings.Count);
+
+        foreach (var reading in readings)
+        {
+            var totalQuestions = reading.AssessmentId.HasValue &&
+                questionCountsByAssessmentId.TryGetValue(reading.AssessmentId.Value, out var questionCount)
+                    ? questionCount
+                    : 0;
+
+            if (!reading.AssessmentId.HasValue ||
+                !latestAttemptByAssessmentId.TryGetValue(reading.AssessmentId.Value, out var attempt))
+            {
+                items.Add(new ReadingProgressItemDto(
+                    reading.ReadingId,
+                    reading.Title,
+                    reading.Summary,
+                    reading.ImageUrl,
+                    reading.DifficultyLevelId,
+                    reading.DifficultyLevelName,
+                    reading.EstimatedMinutes,
+                    null,
+                    null,
+                    NotStartedStatus,
+                    null,
+                    null,
+                    0m,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    totalQuestions,
+                    0,
+                    0,
+                    null,
+                    $"/readings/{reading.ReadingId}"));
+                continue;
+            }
+
+            var snapshot = await BuildReadingAttemptSnapshotAsync(attempt, cancellationToken);
+            var scoreSnapshot = ResolveProgressScores(attempt, snapshot);
+            var totalTimeSeconds = await GetAttemptTotalTimeSecondsAsync(attempt, cancellationToken);
+            var isCompleted = string.Equals(attempt.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase);
+            var resultRoute = isCompleted
+                ? $"/reading-sessions/{attempt.AttemptId}/result"
+                : null;
+            var actionRoute = isCompleted
+                ? resultRoute!
+                : $"/reading-sessions/{attempt.AttemptId}";
+
+            items.Add(new ReadingProgressItemDto(
+                reading.ReadingId,
+                reading.Title,
+                reading.Summary,
+                reading.ImageUrl,
+                reading.DifficultyLevelId,
+                reading.DifficultyLevelName,
+                reading.EstimatedMinutes,
+                attempt.AttemptId,
+                attempt.AttemptNumber,
+                attempt.Status,
+                attempt.StartedAt,
+                attempt.FinishedAt,
+                ResolveCompletionPercentage(attempt, snapshot),
+                scoreSnapshot.TotalScore,
+                scoreSnapshot.LiteralScore,
+                scoreSnapshot.InferentialScore,
+                scoreSnapshot.CriticalScore,
+                scoreSnapshot.TotalCorrect,
+                scoreSnapshot.TotalErrors,
+                snapshot.TotalQuestions,
+                snapshot.AnsweredQuestions,
+                totalTimeSeconds,
+                resultRoute,
+                actionRoute));
+        }
+
+        var completedItems = items
+            .Where(item => string.Equals(item.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return new ReadingProgressSummaryDto(
+            items.Count,
+            completedItems.Count,
+            items.Count(item => string.Equals(item.Status, InProgressStatus, StringComparison.OrdinalIgnoreCase)),
+            RoundPercentage(completedItems.Count, items.Count),
+            AverageOrNull(completedItems.Select(item => item.TotalScore)),
+            AverageOrNull(completedItems.Select(item => item.LiteralScore)),
+            AverageOrNull(completedItems.Select(item => item.InferentialScore)),
+            AverageOrNull(completedItems.Select(item => item.CriticalScore)),
+            items.Sum(item => item.TotalTimeSeconds),
+            items);
     }
 
     public async Task<ReadingDetailDto> GetReadingDetailAsync(
@@ -824,7 +988,7 @@ public sealed class ReadingService : IReadingService
 
         if (questionData.Count == 0)
         {
-            return new ReadingAttemptSnapshot(0m, 0m, 0m, 0m, 0, 0, 0m, 0);
+            return new ReadingAttemptSnapshot(0m, 0m, 0m, 0m, 0, 0, 0m, 0, 0);
         }
 
         var answers = await _dbContext.AttemptAnswers
@@ -892,7 +1056,90 @@ public sealed class ReadingService : IReadingService
             totalCorrect,
             totalIncorrect,
             RoundPercentage(answeredQuestions, questionData.Count),
-            questionData.Count);
+            questionData.Count,
+            answeredQuestions);
+    }
+
+    private async Task<int> GetAttemptTotalTimeSecondsAsync(
+        AssessmentAttempt attempt,
+        CancellationToken cancellationToken)
+    {
+        if (attempt.TotalTimeSeconds.HasValue)
+        {
+            return attempt.TotalTimeSeconds.Value;
+        }
+
+        var phaseTimeSeconds = await _dbContext.AttemptPhaseProgresses
+            .AsNoTracking()
+            .Where(progress => progress.AttemptId == attempt.AttemptId)
+            .SumAsync(progress => progress.TimeSpentSeconds ?? 0, cancellationToken);
+
+        if (phaseTimeSeconds > 0)
+        {
+            return phaseTimeSeconds;
+        }
+
+        return await _dbContext.AttemptAnswers
+            .AsNoTracking()
+            .Where(answer => answer.AttemptId == attempt.AttemptId)
+            .SumAsync(answer => answer.AnswerTimeSeconds ?? 0, cancellationToken);
+    }
+
+    private static ReadingProgressScoreSnapshot ResolveProgressScores(
+        AssessmentAttempt attempt,
+        ReadingAttemptSnapshot snapshot)
+    {
+        var hasAnswers = snapshot.AnsweredQuestions > 0;
+        var isCompleted = string.Equals(attempt.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase);
+
+        if (!hasAnswers && !isCompleted)
+        {
+            return new ReadingProgressScoreSnapshot(null, null, null, null, null, null);
+        }
+
+        var useCalculatedSnapshot = hasAnswers && AreStoredScoresEmpty(attempt);
+
+        return new ReadingProgressScoreSnapshot(
+            useCalculatedSnapshot ? snapshot.TotalScore : attempt.TotalScore ?? snapshot.TotalScore,
+            useCalculatedSnapshot ? snapshot.LiteralScore : attempt.LiteralScore ?? snapshot.LiteralScore,
+            useCalculatedSnapshot ? snapshot.InferentialScore : attempt.InferentialScore ?? snapshot.InferentialScore,
+            useCalculatedSnapshot ? snapshot.CriticalScore : attempt.CriticalScore ?? snapshot.CriticalScore,
+            useCalculatedSnapshot ? snapshot.TotalCorrect : attempt.TotalCorrect ?? snapshot.TotalCorrect,
+            useCalculatedSnapshot ? snapshot.TotalErrors : attempt.TotalErrors ?? snapshot.TotalErrors);
+    }
+
+    private static decimal ResolveCompletionPercentage(
+        AssessmentAttempt attempt,
+        ReadingAttemptSnapshot snapshot)
+    {
+        if (string.Equals(attempt.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase) &&
+            attempt.CompletionPercentage.HasValue &&
+            (attempt.CompletionPercentage.Value > 0m || snapshot.AnsweredQuestions == 0))
+        {
+            return attempt.CompletionPercentage.Value;
+        }
+
+        return snapshot.CompletionPercentage;
+    }
+
+    private static bool AreStoredScoresEmpty(AssessmentAttempt attempt)
+    {
+        return IsNullOrZero(attempt.TotalScore) &&
+            IsNullOrZero(attempt.LiteralScore) &&
+            IsNullOrZero(attempt.InferentialScore) &&
+            IsNullOrZero(attempt.CriticalScore) &&
+            IsNullOrZero(attempt.TotalCorrect) &&
+            IsNullOrZero(attempt.TotalErrors);
+    }
+
+    private static bool IsNullOrZero(decimal? value)
+    {
+        return !value.HasValue || value.Value == 0m;
+    }
+
+    private static bool IsNullOrZero(int? value)
+    {
+        return !value.HasValue || value.Value == 0;
     }
 
     private static decimal CalculateScorePercentage(decimal obtained, decimal available)
@@ -913,6 +1160,21 @@ public sealed class ReadingService : IReadingService
         }
 
         return Math.Round((decimal)numerator / denominator * 100m, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static decimal? AverageOrNull(IEnumerable<decimal?> values)
+    {
+        var concreteValues = values
+            .Where(value => value.HasValue)
+            .Select(value => value!.Value)
+            .ToList();
+
+        if (concreteValues.Count == 0)
+        {
+            return null;
+        }
+
+        return Math.Round(concreteValues.Average(), 2, MidpointRounding.AwayFromZero);
     }
 
     private async Task EnsurePhaseMeetsMinimumAnswersAsync(
@@ -1043,7 +1305,26 @@ public sealed class ReadingService : IReadingService
         int TotalCorrect,
         int TotalErrors,
         decimal CompletionPercentage,
-        int TotalQuestions);
+        int TotalQuestions,
+        int AnsweredQuestions);
+
+    private sealed record ReadingProgressReadingRow(
+        int ReadingId,
+        string Title,
+        string? Summary,
+        string? ImageUrl,
+        byte DifficultyLevelId,
+        string DifficultyLevelName,
+        int? EstimatedMinutes,
+        int? AssessmentId);
+
+    private sealed record ReadingProgressScoreSnapshot(
+        decimal? TotalScore,
+        decimal? LiteralScore,
+        decimal? InferentialScore,
+        decimal? CriticalScore,
+        int? TotalCorrect,
+        int? TotalErrors);
 
     private enum DimensionBucket
     {

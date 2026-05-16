@@ -41,6 +41,27 @@ public class ReadingsController : ControllerBase
         }
     }
 
+    [HttpGet("progress")]
+    [ProducesResponseType(typeof(ReadingProgressSummaryDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ReadingProgressSummaryDto>> GetReadingProgress(
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var studentId = GetAuthenticatedStudentId();
+            var progress = await _readingService.GetReadingProgressAsync(studentId, cancellationToken);
+            return Ok(progress);
+        }
+        catch (ReadingAccessDeniedException exception)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = exception.Message });
+        }
+        catch (ReadingValidationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     [HttpGet("{readingId:int}")]
     [ProducesResponseType(typeof(ReadingDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

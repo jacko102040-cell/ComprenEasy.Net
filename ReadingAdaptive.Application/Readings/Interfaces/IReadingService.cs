@@ -8,6 +8,10 @@ public interface IReadingService
         int studentId,
         CancellationToken cancellationToken = default);
 
+    Task<ReadingProgressSummaryDto> GetReadingProgressAsync(
+        int studentId,
+        CancellationToken cancellationToken = default);
+
     Task<ReadingDetailDto> GetReadingDetailAsync(
         int readingId,
         int studentId,
