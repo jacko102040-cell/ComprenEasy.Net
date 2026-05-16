@@ -10,6 +10,8 @@ using ReadingAdaptive.Application.Evaluations.Interfaces;
 using ReadingAdaptive.Application.Readings.Interfaces;
 using ReadingAdaptive.Infrastructure.Configuration;
 using ReadingAdaptive.Application.TeacherPanel.Interfaces;
+using ReadingAdaptive.ML.Options;
+using ReadingAdaptive.ML.Services;
 using ReadingAdaptive.Infrastructure.Persistence;
 using ReadingAdaptive.Infrastructure.Security;
 using ReadingAdaptive.Infrastructure.Services;
@@ -32,11 +34,13 @@ public static class DependencyInjection
         services.AddDbContext<ReadingAdaptiveDbContext>(options =>
             options.UseSqlServer(connectionString));
         services.Configure<AcademicFlowOptions>(configuration.GetSection(AcademicFlowOptions.SectionName));
+        services.Configure<AdaptiveMlOptions>(configuration.GetSection(AdaptiveMlOptions.SectionName));
 
         services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAcademicContentService, AcademicContentService>();
         services.AddScoped<IAcademicFlowService, AcademicFlowService>();
+        services.AddSingleton<IAdaptiveRecommendationPredictionService, AdaptiveRecommendationPredictionService>();
         services.AddScoped<IAdaptiveRecommendationService, AdaptiveRecommendationService>();
         services.AddScoped<ICatalogService, CatalogService>();
         services.AddScoped<IEvaluationService, EvaluationService>();
