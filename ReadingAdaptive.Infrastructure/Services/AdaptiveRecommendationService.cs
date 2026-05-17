@@ -16,6 +16,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 {
     private const string CompletedStatus = "Completed";
     private const string RulesModelVersion = "rules-v1";
+    private const string BasicMlModelVersion = "mlnet-sdca-v1";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
     private readonly IAcademicFlowService _academicFlowService;
@@ -71,6 +72,9 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             .Include(item => item.RecommendedAssessment)
             .Include(item => item.SourceAttempt)
                 .ThenInclude(attempt => attempt.Assessment)
+            .Include(item => item.SourceAttempt)
+                .ThenInclude(attempt => attempt.AttemptAnswers)
+            .Include(item => item.MlPrediction)
             .Where(item => item.StudentId == studentId && item.SourceAttemptId == attemptId)
             .OrderByDescending(item => item.CreatedAt)
             .ThenByDescending(item => item.RecommendationId)
@@ -78,6 +82,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         if (existingRecommendation is not null)
         {
+            await EnsureMlPredictionAsync(existingRecommendation, cancellationToken);
             return await MapRecommendationAsync(existingRecommendation, studentId, cancellationToken);
         }
 
@@ -183,7 +188,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             ? mlPrediction.PredictedAction!
             : ruleOutcome.PredictedAction;
         var engineType = useMlPrediction
-            ? AdaptiveEngineTypes.MlNet
+            ? AdaptiveEngineTypes.BasicMl
             : AdaptiveEngineTypes.Rules;
         var modelVersion = useMlPrediction
             ? mlPrediction.ModelVersion
@@ -255,6 +260,49 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             .SingleAsync(item => item.RecommendationId == recommendation.RecommendationId, cancellationToken);
 
         return await MapRecommendationAsync(savedRecommendation, studentId, cancellationToken);
+    }
+
+    private async Task EnsureMlPredictionAsync(
+        AdaptiveRecommendation recommendation,
+        CancellationToken cancellationToken)
+    {
+        if (recommendation.MlPrediction is not null ||
+            !string.Equals(recommendation.EngineType, AdaptiveEngineTypes.BasicMl, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var sourceAttempt = recommendation.SourceAttempt;
+        var literalScore = sourceAttempt.LiteralScore ?? 0m;
+        var inferentialScore = sourceAttempt.InferentialScore ?? 0m;
+        var criticalScore = sourceAttempt.CriticalScore ?? 0m;
+        var totalErrors = sourceAttempt.TotalErrors ?? 0;
+        var totalTimeSeconds = sourceAttempt.TotalTimeSeconds ?? 0;
+        var answeredCount = sourceAttempt.AttemptAnswers.Count;
+        var averageResponseTimeSeconds = Math.Round(
+            totalTimeSeconds / (decimal)Math.Max(answeredCount, 1),
+            2,
+            MidpointRounding.AwayFromZero);
+        var confidence = recommendation.ConfidenceScore.HasValue
+            ? Math.Round(recommendation.ConfidenceScore.Value / 100m, 4, MidpointRounding.AwayFromZero)
+            : 0m;
+
+        _dbContext.MlPredictions.Add(new MlPrediction
+        {
+            RecommendationId = recommendation.RecommendationId,
+            LiteralScore = literalScore,
+            InferentialScore = inferentialScore,
+            CriticalScore = criticalScore,
+            ErrorCount = totalErrors,
+            AvgResponseTimeSeconds = averageResponseTimeSeconds,
+            CurrentDifficultyRank = recommendation.CurrentDifficultyLevel.RankOrder,
+            PreviousProgressDelta = null,
+            ModelVersion = BasicMlModelVersion,
+            RawOutput = BuildRecoveredMlRawOutput(recommendation.PredictedAction, confidence),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task EnsureStudentAsync(int studentId, CancellationToken cancellationToken)
@@ -388,6 +436,15 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
         return string.Create(
             CultureInfo.InvariantCulture,
             $"source=ml;action={predictedAction};confidence={confidence:0.####};scores={scoreText}");
+    }
+
+    private static string BuildRecoveredMlRawOutput(
+        string predictedAction,
+        decimal confidence)
+    {
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"source=ml;action={predictedAction};confidence={confidence:0.####};scores=recovered");
     }
 
     private static bool IsValidPredictedAction(string? predictedAction)
