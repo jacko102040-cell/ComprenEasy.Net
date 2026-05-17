@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadingAdaptive.Infrastruct
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadingAdaptive.ML", "ReadingAdaptive.ML\ReadingAdaptive.ML.csproj", "{6EA2FDC1-40DE-401F-B17C-73C38BB87CFE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadingAdaptive.ML.TrainerApp", "ReadingAdaptive.ML.TrainerApp\ReadingAdaptive.ML.TrainerApp.csproj", "{C2514CA8-98FB-4907-9294-0167C006FAC0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{6EA2FDC1-40DE-401F-B17C-73C38BB87CFE}.Release|x64.Build.0 = Release|Any CPU
 		{6EA2FDC1-40DE-401F-B17C-73C38BB87CFE}.Release|x86.ActiveCfg = Release|Any CPU
 		{6EA2FDC1-40DE-401F-B17C-73C38BB87CFE}.Release|x86.Build.0 = Release|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Debug|x64.Build.0 = Debug|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Debug|x86.Build.0 = Debug|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Release|x64.ActiveCfg = Release|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Release|x64.Build.0 = Release|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Release|x86.ActiveCfg = Release|Any CPU
+		{C2514CA8-98FB-4907-9294-0167C006FAC0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
