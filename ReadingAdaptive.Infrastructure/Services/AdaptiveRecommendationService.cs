@@ -15,17 +15,21 @@ namespace ReadingAdaptive.Infrastructure.Services;
 public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationService
 {
     private const string CompletedStatus = "Completed";
-    private const string ModelVersion = "rules-v1";
+    private const string RulesModelVersion = "rules-v1";
+    private const string BasicMlModelVersion = "mlnet-sdca-v1";
 
     private readonly ReadingAdaptiveDbContext _dbContext;
     private readonly IAcademicFlowService _academicFlowService;
+    private readonly IAdaptiveRecommendationPredictionService _predictionService;
 
     public AdaptiveRecommendationService(
         ReadingAdaptiveDbContext dbContext,
-        IAcademicFlowService academicFlowService)
+        IAcademicFlowService academicFlowService,
+        IAdaptiveRecommendationPredictionService predictionService)
     {
         _dbContext = dbContext;
         _academicFlowService = academicFlowService;
+        _predictionService = predictionService;
     }
 
     public async Task<AdaptiveRecommendationDto> GetLatestRecommendationAsync(
@@ -68,6 +72,9 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             .Include(item => item.RecommendedAssessment)
             .Include(item => item.SourceAttempt)
                 .ThenInclude(attempt => attempt.Assessment)
+            .Include(item => item.SourceAttempt)
+                .ThenInclude(attempt => attempt.AttemptAnswers)
+            .Include(item => item.MlPrediction)
             .Where(item => item.StudentId == studentId && item.SourceAttemptId == attemptId)
             .OrderByDescending(item => item.CreatedAt)
             .ThenByDescending(item => item.RecommendationId)
@@ -75,6 +82,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         if (existingRecommendation is not null)
         {
+            await EnsureMlPredictionAsync(existingRecommendation, cancellationToken);
             return await MapRecommendationAsync(existingRecommendation, studentId, cancellationToken);
         }
 
@@ -136,6 +144,18 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             ? totalScore - previousTotalScore
             : (decimal?)null;
 
+        var totalCorrect = attempt.TotalCorrect ?? 0;
+        var totalQuestions = await _dbContext.AssessmentQuestions
+            .AsNoTracking()
+            .CountAsync(item => item.AssessmentId == attempt.AssessmentId && item.IsActive, cancellationToken);
+        var completedReadingSessions = await _dbContext.AssessmentAttempts
+            .AsNoTracking()
+            .CountAsync(item =>
+                item.StudentId == studentId &&
+                item.Status == CompletedStatus &&
+                item.Assessment.AssessmentType == ReadingAssessmentTypes.ReadingPractice,
+                cancellationToken);
+
         var ruleOutcome = EvaluateRules(
             totalScore,
             literalScore,
@@ -147,16 +167,55 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             currentDifficulty,
             allDifficulties);
 
+        var mlPrediction = _predictionService.Predict(new AdaptiveMlPredictionRequest(
+            ToFloat(totalScore),
+            ToFloat(literalScore),
+            ToFloat(inferentialScore),
+            ToFloat(criticalScore),
+            totalCorrect,
+            totalErrors,
+            answeredCount,
+            totalQuestions,
+            ToFloat(completionPercentage),
+            totalTimeSeconds,
+            ToFloat(averageResponseTimeSeconds),
+            currentDifficulty.RankOrder,
+            ToFloat(previousProgressDelta ?? 0m),
+            completedReadingSessions));
+        var useMlPrediction = mlPrediction.IsAccepted &&
+            IsValidPredictedAction(mlPrediction.PredictedAction);
+        var predictedAction = useMlPrediction
+            ? mlPrediction.PredictedAction!
+            : ruleOutcome.PredictedAction;
+        var engineType = useMlPrediction
+            ? AdaptiveEngineTypes.BasicMl
+            : AdaptiveEngineTypes.Rules;
+        var modelVersion = useMlPrediction
+            ? mlPrediction.ModelVersion
+            : RulesModelVersion;
+        var rawOutput = useMlPrediction
+            ? mlPrediction.RawOutput ?? BuildMlRawOutput(predictedAction, mlPrediction.Confidence, mlPrediction.Scores)
+            : BuildRuleRawOutput(
+                ruleOutcome.PredictedAction,
+                ruleOutcome.RecommendedDifficultyLevelId,
+                totalScore,
+                completionPercentage,
+                totalErrors,
+                averageResponseTimeSeconds,
+                mlPrediction.FallbackReason);
+
         var suggestedActivity = await ResolveSuggestedActivityAsync(
             studentId,
             attempt.Assessment.ReadingId,
             cancellationToken);
 
-        var confidenceScore = CalculateConfidenceScore(
-            totalScore,
-            completionPercentage,
-            totalErrors,
-            previousProgressDelta);
+        var confidenceScore = useMlPrediction
+            ? Math.Round((decimal)mlPrediction.Confidence * 100m, 2, MidpointRounding.AwayFromZero)
+            : CalculateConfidenceScore(
+                totalScore,
+                completionPercentage,
+                totalErrors,
+                previousProgressDelta);
 
         var recommendation = new AdaptiveRecommendation
         {
@@ -164,9 +223,9 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             SourceAttemptId = attempt.AttemptId,
             CurrentDifficultyLevelId = currentDifficulty.DifficultyLevelId,
             RecommendedDifficultyLevelId = ruleOutcome.RecommendedDifficultyLevelId,
-            PredictedAction = ruleOutcome.PredictedAction,
+            PredictedAction = predictedAction,
             RecommendedAssessmentId = suggestedActivity.RecommendedAssessmentId,
-            EngineType = AdaptiveEngineTypes.Rules,
+            EngineType = engineType,
             ConfidenceScore = confidenceScore,
             CreatedAt = DateTime.UtcNow
         };
@@ -184,14 +243,8 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             AvgResponseTimeSeconds = averageResponseTimeSeconds,
             CurrentDifficultyRank = currentDifficulty.RankOrder,
             PreviousProgressDelta = previousProgressDelta,
-            ModelVersion = ModelVersion,
-            RawOutput = BuildRawOutput(
-                ruleOutcome.PredictedAction,
-                ruleOutcome.RecommendedDifficultyLevelId,
-                totalScore,
-                completionPercentage,
-                totalErrors,
-                averageResponseTimeSeconds),
+            ModelVersion = modelVersion,
+            RawOutput = rawOutput,
             CreatedAt = DateTime.UtcNow
         });
 
@@ -207,6 +260,49 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             .SingleAsync(item => item.RecommendationId == recommendation.RecommendationId, cancellationToken);
 
         return await MapRecommendationAsync(savedRecommendation, studentId, cancellationToken);
+    }
+
+    private async Task EnsureMlPredictionAsync(
+        AdaptiveRecommendation recommendation,
+        CancellationToken cancellationToken)
+    {
+        if (recommendation.MlPrediction is not null ||
+            !string.Equals(recommendation.EngineType, AdaptiveEngineTypes.BasicMl, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var sourceAttempt = recommendation.SourceAttempt;
+        var literalScore = sourceAttempt.LiteralScore ?? 0m;
+        var inferentialScore = sourceAttempt.InferentialScore ?? 0m;
+        var criticalScore = sourceAttempt.CriticalScore ?? 0m;
+        var totalErrors = sourceAttempt.TotalErrors ?? 0;
+        var totalTimeSeconds = sourceAttempt.TotalTimeSeconds ?? 0;
+        var answeredCount = sourceAttempt.AttemptAnswers.Count;
+        var averageResponseTimeSeconds = Math.Round(
+            totalTimeSeconds / (decimal)Math.Max(answeredCount, 1),
+            2,
+            MidpointRounding.AwayFromZero);
+        var confidence = recommendation.ConfidenceScore.HasValue
+            ? Math.Round(recommendation.ConfidenceScore.Value / 100m, 4, MidpointRounding.AwayFromZero)
+            : 0m;
+
+        _dbContext.MlPredictions.Add(new MlPrediction
+        {
+            RecommendationId = recommendation.RecommendationId,
+            LiteralScore = literalScore,
+            InferentialScore = inferentialScore,
+            CriticalScore = criticalScore,
+            ErrorCount = totalErrors,
+            AvgResponseTimeSeconds = averageResponseTimeSeconds,
+            CurrentDifficultyRank = recommendation.CurrentDifficultyLevel.RankOrder,
+            PreviousProgressDelta = null,
+            ModelVersion = BasicMlModelVersion,
+            RawOutput = BuildRecoveredMlRawOutput(recommendation.PredictedAction, confidence),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task EnsureStudentAsync(int studentId, CancellationToken cancellationToken)
@@ -310,17 +406,57 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
         return Math.Round(Math.Clamp(score, 0m, 100m), 2, MidpointRounding.AwayFromZero);
     }
 
-    private static string BuildRawOutput(
+    private static string BuildRuleRawOutput(
         string predictedAction,
         byte recommendedDifficultyLevelId,
         decimal totalScore,
         decimal completionPercentage,
         int totalErrors,
-        decimal avgResponseTimeSeconds)
+        decimal avgResponseTimeSeconds,
+        string? fallbackReason)
+    {
+        var fallbackSegment = string.IsNullOrWhiteSpace(fallbackReason)
+            ? string.Empty
+            : $";fallbackReason={fallbackReason}";
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"source=rules{fallbackSegment};action={predictedAction};difficulty={recommendedDifficultyLevelId};score={totalScore:0.##};completion={completionPercentage:0.##};errors={totalErrors};avg={avgResponseTimeSeconds:0.##}");
+    }
+
+    private static string BuildMlRawOutput(
+        string predictedAction,
+        float confidence,
+        IReadOnlyCollection<float> scores)
+    {
+        var scoreText = string.Join(
+            "|",
+            scores.Select(score => score.ToString("0.####", CultureInfo.InvariantCulture)));
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"source=ml;action={predictedAction};confidence={confidence:0.####};scores={scoreText}");
+    }
+
+    private static string BuildRecoveredMlRawOutput(
+        string predictedAction,
+        decimal confidence)
     {
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"action={predictedAction};difficulty={recommendedDifficultyLevelId};score={totalScore:0.##};completion={completionPercentage:0.##};errors={totalErrors};avg={avgResponseTimeSeconds:0.##}");
+            $"source=ml;action={predictedAction};confidence={confidence:0.####};scores=recovered");
+    }
+
+    private static bool IsValidPredictedAction(string? predictedAction)
+    {
+        return string.Equals(predictedAction, AdaptivePredictedActions.Reinforce, StringComparison.Ordinal) ||
+            string.Equals(predictedAction, AdaptivePredictedActions.AdvanceWithSupport, StringComparison.Ordinal) ||
+            string.Equals(predictedAction, AdaptivePredictedActions.Advance, StringComparison.Ordinal);
+    }
+
+    private static float ToFloat(decimal value)
+    {
+        return Convert.ToSingle(value, CultureInfo.InvariantCulture);
     }
 
     private async Task<AdaptiveRecommendationDto> MapRecommendationAsync(

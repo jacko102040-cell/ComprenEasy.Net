@@ -10,3 +10,4 @@ artifacts/
 *.sln.docstates
 
 appsettings.Development.json
+ReadingAdaptive.Api/App_Data/ml/*.zip

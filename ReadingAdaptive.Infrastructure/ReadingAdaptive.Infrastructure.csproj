@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ReadingAdaptive.Application\ReadingAdaptive.Application.csproj" />
     <ProjectReference Include="..\ReadingAdaptive.Domain\ReadingAdaptive.Domain.csproj" />
+    <ProjectReference Include="..\ReadingAdaptive.ML\ReadingAdaptive.ML.csproj" />
   </ItemGroup>
 
   <ItemGroup>
