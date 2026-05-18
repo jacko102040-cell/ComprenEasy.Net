@@ -28,7 +28,7 @@ public static class DependencyInjection
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
+            throw new InvalidOperationException("No se encontro la cadena de conexion 'DefaultConnection'.");
         }
 
         services.AddDbContext<ReadingAdaptiveDbContext>(options =>

@@ -243,7 +243,7 @@ public class EvaluationController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var studentId))
         {
-            throw new EvaluationAccessDeniedException("Authenticated student claim is invalid.");
+            throw new EvaluationAccessDeniedException("La credencial del estudiante autenticado no es valida.");
         }
 
         return studentId;

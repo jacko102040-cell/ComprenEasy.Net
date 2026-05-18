@@ -45,7 +45,7 @@ public sealed partial class AcademicContentService
 
         if (assessment is null || !SupportedAssessmentTypes.Contains(assessment.AssessmentType))
         {
-            throw new AcademicContentNotFoundException("The selected assessment was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la evaluacion seleccionada.");
         }
 
         return MapAssessmentDetail(assessment);
@@ -94,7 +94,7 @@ public sealed partial class AcademicContentService
 
         if (assessment is null || !SupportedAssessmentTypes.Contains(assessment.AssessmentType))
         {
-            throw new AcademicContentNotFoundException("The selected assessment was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la evaluacion seleccionada.");
         }
 
         assessment.AssessmentType = request.AssessmentType;
@@ -122,7 +122,7 @@ public sealed partial class AcademicContentService
 
         if (assessment is null)
         {
-            throw new AcademicContentNotFoundException("The selected assessment was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la evaluacion seleccionada.");
         }
 
         assessment.IsActive = false;

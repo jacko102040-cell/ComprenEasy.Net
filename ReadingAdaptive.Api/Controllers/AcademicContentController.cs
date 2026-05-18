@@ -141,7 +141,7 @@ public sealed class AcademicContentController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var teacherId))
         {
-            throw new AcademicContentAccessDeniedException("Authenticated teacher claim is invalid.");
+            throw new AcademicContentAccessDeniedException("La credencial del docente autenticado no es valida.");
         }
 
         return teacherId;

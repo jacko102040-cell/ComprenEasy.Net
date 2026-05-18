@@ -80,7 +80,7 @@ public sealed class EvaluationService : IEvaluationService
 
         if (assessment is null)
         {
-            throw new EvaluationNotFoundException("Active evaluation was not found.");
+            throw new EvaluationNotFoundException("No se encontro una evaluacion activa.");
         }
 
         await EnsureAssessmentTypeAccessibleAsync(
@@ -191,7 +191,7 @@ public sealed class EvaluationService : IEvaluationService
         if (hasCompletedAttempt)
         {
             throw new EvaluationValidationException(
-                "A completed attempt already exists for this evaluation.");
+                "Ya existe un intento completado para esta evaluacion.");
         }
 
         var lastAttemptNumber = await _dbContext.AssessmentAttempts
@@ -230,19 +230,19 @@ public sealed class EvaluationService : IEvaluationService
     {
         if (request.Answers.Count == 0)
         {
-            throw new EvaluationValidationException("At least one answer is required.");
+            throw new EvaluationValidationException("Se requiere al menos una respuesta.");
         }
 
         if (request.Answers.Select(answer => answer.QuestionId).Distinct().Count() != request.Answers.Count)
         {
-            throw new EvaluationValidationException("Duplicated question ids are not allowed in the same request.");
+            throw new EvaluationValidationException("No se permiten ids de pregunta duplicados en la misma solicitud.");
         }
 
         var attempt = await GetOwnedAttemptEntityAsync(attemptId, studentId, cancellationToken);
 
         if (!string.Equals(attempt.Status, InProgressStatus, StringComparison.OrdinalIgnoreCase))
         {
-            throw new EvaluationValidationException("Only in-progress attempts can receive answers.");
+            throw new EvaluationValidationException("Solo los intentos en curso pueden recibir respuestas.");
         }
 
         var questionIds = request.Answers
@@ -265,7 +265,7 @@ public sealed class EvaluationService : IEvaluationService
 
         if (assessmentQuestions.Count != questionIds.Count)
         {
-            throw new EvaluationValidationException("One or more questions do not belong to the selected evaluation.");
+            throw new EvaluationValidationException("Una o mas preguntas no pertenecen a la evaluacion seleccionada.");
         }
 
         var optionIds = request.Answers
@@ -286,7 +286,7 @@ public sealed class EvaluationService : IEvaluationService
 
         if (options.Count != optionIds.Count)
         {
-            throw new EvaluationValidationException("One or more selected options are invalid.");
+            throw new EvaluationValidationException("Una o mas opciones seleccionadas no son validas.");
         }
 
         var questionPoints = assessmentQuestions.ToDictionary(question => question.QuestionId, question => question.Points);
@@ -303,7 +303,7 @@ public sealed class EvaluationService : IEvaluationService
             if (!optionsById.TryGetValue(incomingAnswer.SelectedOptionId, out var selectedOption) ||
                 selectedOption.QuestionId != incomingAnswer.QuestionId)
             {
-                throw new EvaluationValidationException("A selected option does not match its question.");
+                throw new EvaluationValidationException("Una opcion seleccionada no coincide con su pregunta.");
             }
 
             var isCorrect = selectedOption.IsCorrect;
@@ -371,7 +371,7 @@ public sealed class EvaluationService : IEvaluationService
 
         if (!string.Equals(attempt.Status, InProgressStatus, StringComparison.OrdinalIgnoreCase))
         {
-            throw new EvaluationValidationException("Only in-progress attempts can be finalized.");
+            throw new EvaluationValidationException("Solo los intentos en curso pueden finalizarse.");
         }
 
         await EnsureAssessmentTypeAccessibleAsync(
@@ -518,12 +518,12 @@ public sealed class EvaluationService : IEvaluationService
 
         if (student is null)
         {
-            throw new EvaluationAccessDeniedException("Authenticated user is not registered as a student.");
+            throw new EvaluationAccessDeniedException("El usuario autenticado no esta registrado como estudiante.");
         }
 
         if (!student.IsEnabledForTest)
         {
-            throw new EvaluationAccessDeniedException("Student is not enabled for assessments.");
+            throw new EvaluationAccessDeniedException("El estudiante no esta habilitado para evaluaciones.");
         }
     }
 
@@ -539,7 +539,7 @@ public sealed class EvaluationService : IEvaluationService
 
         if (assessment is null)
         {
-            throw new EvaluationNotFoundException("Active evaluation was not found.");
+            throw new EvaluationNotFoundException("No se encontro una evaluacion activa.");
         }
 
         return assessment;
@@ -558,17 +558,17 @@ public sealed class EvaluationService : IEvaluationService
 
         if (attempt is null)
         {
-            throw new EvaluationNotFoundException("Assessment attempt was not found.");
+            throw new EvaluationNotFoundException("No se encontro el intento de evaluacion.");
         }
 
         if (attempt.StudentId != studentId)
         {
-            throw new EvaluationAccessDeniedException("You cannot operate on another student's attempt.");
+            throw new EvaluationAccessDeniedException("No puedes operar sobre el intento de otro estudiante.");
         }
 
         if (!AssessmentTypes.SupportedTypes.Contains(attempt.Assessment.AssessmentType))
         {
-            throw new EvaluationValidationException("The selected attempt does not belong to a supported evaluation type.");
+            throw new EvaluationValidationException("El intento seleccionado no pertenece a un tipo de evaluacion compatible.");
         }
 
         return attempt;
@@ -604,7 +604,7 @@ public sealed class EvaluationService : IEvaluationService
         if (missingAnswers > 0)
         {
             throw new EvaluationValidationException(
-                $"Cannot finalize {attempt.Assessment.AssessmentType}. {missingAnswers} question(s) are still unanswered.");
+                $"No se puede finalizar {attempt.Assessment.AssessmentType}. Aun quedan {missingAnswers} pregunta(s) sin responder.");
         }
     }
 
@@ -735,7 +735,7 @@ public sealed class EvaluationService : IEvaluationService
         if (string.Equals(assessmentType, AssessmentTypes.Pretest, StringComparison.Ordinal))
         {
             throw new EvaluationValidationException(
-                "Pretest is not available in the current academic flow.");
+                "El Pretest no esta disponible en el flujo academico actual.");
         }
 
         if (summary.CanAccessPosttest)
@@ -746,11 +746,11 @@ public sealed class EvaluationService : IEvaluationService
         if (summary.HasCompletedPosttest)
         {
             throw new EvaluationValidationException(
-                "Posttest has already been completed.");
+                "El Posttest ya fue completado.");
         }
 
         throw new EvaluationValidationException(
-            "Posttest is only available after completing the minimum reading intervention.");
+            "El Posttest solo esta disponible despues de completar la intervencion minima de lectura.");
     }
 
     private async Task<ComparisonMetrics> BuildComparisonMetricsAsync(
@@ -829,7 +829,7 @@ public sealed class EvaluationService : IEvaluationService
     {
         if (!AssessmentTypes.SupportedTypes.Contains(assessmentType))
         {
-            throw new EvaluationValidationException("Only Pretest and Posttest evaluations are supported.");
+            throw new EvaluationValidationException("Solo se admiten evaluaciones Pretest y Posttest.");
         }
     }
 

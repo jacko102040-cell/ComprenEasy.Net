@@ -58,7 +58,7 @@ public sealed partial class AcademicContentService
 
         if (question is null)
         {
-            throw new AcademicContentNotFoundException("The selected question was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la pregunta seleccionada.");
         }
 
         return await MapQuestionDetailAsync(question, cancellationToken);
@@ -116,7 +116,7 @@ public sealed partial class AcademicContentService
 
         if (question is null)
         {
-            throw new AcademicContentNotFoundException("The selected question was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la pregunta seleccionada.");
         }
 
         question.DimensionId = request.DimensionId;
@@ -144,7 +144,7 @@ public sealed partial class AcademicContentService
 
         if (question is null)
         {
-            throw new AcademicContentNotFoundException("The selected question was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la pregunta seleccionada.");
         }
 
         question.IsActive = false;

@@ -82,7 +82,7 @@ public sealed partial class AcademicContentService : IAcademicContentService
 
         if (reading is null)
         {
-            throw new AcademicContentNotFoundException("The selected reading was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la lectura seleccionada.");
         }
 
         return MapReadingDetail(reading);
@@ -133,7 +133,7 @@ public sealed partial class AcademicContentService : IAcademicContentService
 
         if (reading is null)
         {
-            throw new AcademicContentNotFoundException("The selected reading was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la lectura seleccionada.");
         }
 
         reading.Title = request.Title.Trim();
@@ -162,7 +162,7 @@ public sealed partial class AcademicContentService : IAcademicContentService
 
         if (reading is null)
         {
-            throw new AcademicContentNotFoundException("The selected reading was not found.");
+            throw new AcademicContentNotFoundException("No se encontro la lectura seleccionada.");
         }
 
         reading.IsActive = false;

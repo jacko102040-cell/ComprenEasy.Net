@@ -86,7 +86,7 @@ public class AdaptiveRecommendationsController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var studentId))
         {
-            throw new AdaptiveAccessDeniedException("Authenticated student claim is invalid.");
+            throw new AdaptiveAccessDeniedException("La credencial del estudiante autenticado no es valida.");
         }
 
         return studentId;

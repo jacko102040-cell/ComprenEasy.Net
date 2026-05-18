@@ -302,7 +302,7 @@ public class ReadingsController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var studentId))
         {
-            throw new ReadingAccessDeniedException("Authenticated student claim is invalid.");
+            throw new ReadingAccessDeniedException("La credencial del estudiante autenticado no es valida.");
         }
 
         return studentId;

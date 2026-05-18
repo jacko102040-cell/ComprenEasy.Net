@@ -52,7 +52,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         if (recommendation is null)
         {
-            throw new AdaptiveNotFoundException("No adaptive recommendation was found for the authenticated student.");
+            throw new AdaptiveNotFoundException("No se encontro ninguna recomendacion adaptativa para el estudiante autenticado.");
         }
 
         return await MapRecommendationAsync(recommendation, studentId, cancellationToken);
@@ -97,17 +97,17 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         if (attempt is null)
         {
-            throw new AdaptiveNotFoundException("The selected attempt was not found.");
+            throw new AdaptiveNotFoundException("No se encontro el intento seleccionado.");
         }
 
         if (attempt.StudentId != studentId)
         {
-            throw new AdaptiveAccessDeniedException("You cannot generate a recommendation from another student's attempt.");
+            throw new AdaptiveAccessDeniedException("No puedes generar una recomendacion a partir del intento de otro estudiante.");
         }
 
         if (!string.Equals(attempt.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase))
         {
-            throw new AdaptiveValidationException("Only completed attempts can generate adaptive recommendations.");
+            throw new AdaptiveValidationException("Solo los intentos completados pueden generar recomendaciones adaptativas.");
         }
 
         var currentDifficulty = await ResolveCurrentDifficultyAsync(attempt, cancellationToken);
@@ -313,7 +313,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
 
         if (!exists)
         {
-            throw new AdaptiveAccessDeniedException("Authenticated user is not registered as a student.");
+            throw new AdaptiveAccessDeniedException("El usuario autenticado no esta registrado como estudiante.");
         }
     }
 
@@ -337,7 +337,7 @@ public sealed class AdaptiveRecommendationService : IAdaptiveRecommendationServi
             .FirstOrDefaultAsync(cancellationToken);
 
         return fallbackDifficulty
-            ?? throw new AdaptiveValidationException("No difficulty levels are configured for adaptive recommendations.");
+            ?? throw new AdaptiveValidationException("No hay niveles de dificultad configurados para las recomendaciones adaptativas.");
     }
 
     private static RuleOutcome EvaluateRules(

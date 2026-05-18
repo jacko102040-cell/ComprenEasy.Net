@@ -81,14 +81,14 @@ public class AuthController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var userId))
         {
-            return Unauthorized(new { message = "Authenticated user claim is invalid." });
+            return Unauthorized(new { message = "La credencial del usuario autenticado no es valida." });
         }
 
         var user = await _authService.GetCurrentUserAsync(userId, cancellationToken);
 
         if (user is null)
         {
-            return NotFound(new { message = "Authenticated user was not found." });
+            return NotFound(new { message = "No se encontro al usuario autenticado." });
         }
 
         return Ok(user);

@@ -45,7 +45,7 @@ public sealed class AcademicFlowController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var studentId))
         {
-            throw new AcademicFlowAccessDeniedException("Authenticated student claim is invalid.");
+            throw new AcademicFlowAccessDeniedException("La credencial del estudiante autenticado no es valida.");
         }
 
         return studentId;

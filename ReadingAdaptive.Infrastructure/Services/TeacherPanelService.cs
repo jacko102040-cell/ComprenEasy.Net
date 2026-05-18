@@ -92,7 +92,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
         if (student is null)
         {
-            throw new TeacherPanelNotFoundException("The selected student was not found.");
+            throw new TeacherPanelNotFoundException("No se encontro el estudiante seleccionado.");
         }
 
         var attempts = await _dbContext.AssessmentAttempts
@@ -215,7 +215,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
         if (!teacher.CanResetPasswords)
         {
-            throw new TeacherPanelAccessDeniedException("The authenticated teacher cannot reset student passwords.");
+            throw new TeacherPanelAccessDeniedException("El docente autenticado no puede restablecer las contrasenas de los estudiantes.");
         }
 
         var studentUser = await _dbContext.Users
@@ -226,7 +226,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
         if (studentUser is null)
         {
-            throw new TeacherPanelNotFoundException("The selected student was not found.");
+            throw new TeacherPanelNotFoundException("No se encontro el estudiante seleccionado.");
         }
 
         var temporaryPassword = BuildTemporaryPassword(studentId);
@@ -265,7 +265,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
         if (commentTag is null)
         {
-            throw new TeacherPanelValidationException("The selected comment tag is not available.");
+            throw new TeacherPanelValidationException("La etiqueta de comentario seleccionada no esta disponible.");
         }
 
         if (request.AttemptId is long attemptId)
@@ -276,7 +276,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
             if (!ownsAttempt)
             {
-                throw new TeacherPanelValidationException("The selected attempt does not belong to the student.");
+                throw new TeacherPanelValidationException("El intento seleccionado no pertenece al estudiante.");
             }
         }
 
@@ -319,7 +319,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
             .SingleOrDefaultAsync(item => item.TeacherId == teacherId, cancellationToken);
 
         return teacher
-            ?? throw new TeacherPanelAccessDeniedException("Authenticated user is not registered as a teacher.");
+            ?? throw new TeacherPanelAccessDeniedException("El usuario autenticado no esta registrado como docente.");
     }
 
     private async Task EnsureStudentExistsAsync(int studentId, CancellationToken cancellationToken)
@@ -330,7 +330,7 @@ public sealed class TeacherPanelService : ITeacherPanelService
 
         if (!exists)
         {
-            throw new TeacherPanelNotFoundException("The selected student was not found.");
+            throw new TeacherPanelNotFoundException("No se encontro el estudiante seleccionado.");
         }
     }
 

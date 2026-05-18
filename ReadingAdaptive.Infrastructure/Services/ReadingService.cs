@@ -245,7 +245,7 @@ public sealed class ReadingService : IReadingService
 
         if (reading is null)
         {
-            throw new ReadingNotFoundException("Active reading was not found.");
+            throw new ReadingNotFoundException("No se encontro una lectura activa.");
         }
 
         return reading;
@@ -306,7 +306,7 @@ public sealed class ReadingService : IReadingService
 
         if (readingPhases.Count == 0)
         {
-            throw new ReadingValidationException("The selected reading has no enabled phases configured.");
+            throw new ReadingValidationException("La lectura seleccionada no tiene fases habilitadas configuradas.");
         }
 
         var lastAttemptNumber = await _dbContext.AssessmentAttempts
@@ -371,7 +371,7 @@ public sealed class ReadingService : IReadingService
 
         if (string.Equals(phaseProgress.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ReadingValidationException("Completed phases cannot receive additional progress.");
+            throw new ReadingValidationException("Las fases completadas no pueden recibir progreso adicional.");
         }
 
         if (phaseProgress.StartedAt is null)
@@ -480,7 +480,7 @@ public sealed class ReadingService : IReadingService
 
         if (requiredPhases.Any(phaseId => !completedRequiredPhaseIds.Contains(phaseId)))
         {
-            throw new ReadingValidationException("All required phases must be completed before finishing the reading session.");
+            throw new ReadingValidationException("Todas las fases requeridas deben completarse antes de finalizar la sesion de lectura.");
         }
 
         var enabledPhaseCount = attempt.AttemptPhaseProgresses.Count;
@@ -520,7 +520,7 @@ public sealed class ReadingService : IReadingService
         await LogFeedbackAsync(
             attempt.AttemptId,
             null,
-            "Reading session completed.",
+            "Sesion de lectura completada.",
             FinalFeedbackType,
             cancellationToken);
 
@@ -538,12 +538,12 @@ public sealed class ReadingService : IReadingService
 
         if (student is null)
         {
-            throw new ReadingAccessDeniedException("Authenticated user is not registered as a student.");
+            throw new ReadingAccessDeniedException("El usuario autenticado no esta registrado como estudiante.");
         }
 
         if (!student.IsEnabledForTest)
         {
-            throw new ReadingAccessDeniedException("Student is not enabled for reading sessions.");
+            throw new ReadingAccessDeniedException("El estudiante no esta habilitado para sesiones de lectura.");
         }
     }
 
@@ -560,7 +560,7 @@ public sealed class ReadingService : IReadingService
 
         if (!exists)
         {
-            throw new ReadingNotFoundException("Active reading was not found.");
+            throw new ReadingNotFoundException("No se encontro una lectura activa.");
         }
     }
 
@@ -572,7 +572,7 @@ public sealed class ReadingService : IReadingService
 
         if (reading is null)
         {
-            throw new ReadingNotFoundException("Active reading was not found.");
+            throw new ReadingNotFoundException("No se encontro una lectura activa.");
         }
 
         return reading;
@@ -610,7 +610,7 @@ public sealed class ReadingService : IReadingService
             AssessmentType = ReadingAssessmentTypes.ReadingPractice,
             ReadingId = reading.ReadingId,
             Title = reading.Title,
-            Description = $"Reading session for {reading.Title}",
+            Description = $"Sesion de lectura de {reading.Title}",
             DifficultyLevelId = reading.DifficultyLevelId,
             IsActive = true
         };
@@ -638,12 +638,12 @@ public sealed class ReadingService : IReadingService
 
         if (attempt is null)
         {
-            throw new ReadingNotFoundException("Reading session was not found.");
+            throw new ReadingNotFoundException("No se encontro la sesion de lectura.");
         }
 
         if (attempt.StudentId != studentId)
         {
-            throw new ReadingAccessDeniedException("You cannot operate on another student's reading session.");
+            throw new ReadingAccessDeniedException("No puedes operar sobre la sesion de lectura de otro estudiante.");
         }
 
         if (!string.Equals(
@@ -651,7 +651,7 @@ public sealed class ReadingService : IReadingService
                 ReadingAssessmentTypes.ReadingPractice,
                 StringComparison.Ordinal))
         {
-            throw new ReadingValidationException("The selected attempt does not belong to a reading session.");
+            throw new ReadingValidationException("El intento seleccionado no pertenece a una sesion de lectura.");
         }
 
         return attempt;
@@ -671,11 +671,11 @@ public sealed class ReadingService : IReadingService
 
         if (phaseProgress is null)
         {
-            throw new ReadingNotFoundException("Reading phase progress was not found for this session.");
+            throw new ReadingNotFoundException("No se encontro el progreso de la fase de lectura para esta sesion.");
         }
 
         var readingId = attempt.Assessment.ReadingId
-            ?? throw new ReadingValidationException("Reading session is not linked to a valid reading.");
+            ?? throw new ReadingValidationException("La sesion de lectura no esta vinculada a una lectura valida.");
 
         var readingPhase = await _dbContext.ReadingPhases
             .Include(item => item.Phase)
@@ -685,7 +685,7 @@ public sealed class ReadingService : IReadingService
 
         if (readingPhase is null)
         {
-            throw new ReadingValidationException("The selected phase is not enabled for this reading.");
+            throw new ReadingValidationException("La fase seleccionada no esta habilitada para esta lectura.");
         }
 
         return (attempt, phaseProgress, readingPhase);
@@ -695,7 +695,7 @@ public sealed class ReadingService : IReadingService
     {
         if (!string.Equals(attempt.Status, InProgressStatus, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ReadingValidationException("Only in-progress reading sessions can be updated.");
+            throw new ReadingValidationException("Solo se pueden actualizar las sesiones de lectura en curso.");
         }
     }
 
@@ -712,7 +712,7 @@ public sealed class ReadingService : IReadingService
 
         if (answers.Select(answer => answer.QuestionId).Distinct().Count() != answers.Count)
         {
-            throw new ReadingValidationException("Duplicated question ids are not allowed in the same request.");
+            throw new ReadingValidationException("No se permiten ids de pregunta duplicados en la misma solicitud.");
         }
 
         var questionIds = answers
@@ -736,7 +736,7 @@ public sealed class ReadingService : IReadingService
 
         if (phaseQuestions.Count != questionIds.Count)
         {
-            throw new ReadingValidationException("One or more questions do not belong to the selected phase.");
+            throw new ReadingValidationException("Una o mas preguntas no pertenecen a la fase seleccionada.");
         }
 
         var optionIds = answers
@@ -757,7 +757,7 @@ public sealed class ReadingService : IReadingService
 
         if (options.Count != optionIds.Count)
         {
-            throw new ReadingValidationException("One or more selected options are invalid.");
+            throw new ReadingValidationException("Una o mas opciones seleccionadas no son validas.");
         }
 
         var questionPoints = phaseQuestions.ToDictionary(question => question.QuestionId, question => question.Points);
@@ -774,7 +774,7 @@ public sealed class ReadingService : IReadingService
             if (!optionsById.TryGetValue(incomingAnswer.SelectedOptionId, out var selectedOption) ||
                 selectedOption.QuestionId != incomingAnswer.QuestionId)
             {
-                throw new ReadingValidationException("A selected option does not match its question.");
+                throw new ReadingValidationException("Una opcion seleccionada no coincide con su pregunta.");
             }
 
             var isCorrect = selectedOption.IsCorrect;
@@ -808,7 +808,7 @@ public sealed class ReadingService : IReadingService
         CancellationToken cancellationToken)
     {
         var readingId = attempt.Assessment.ReadingId
-            ?? throw new ReadingValidationException("Reading session is not linked to a valid reading.");
+            ?? throw new ReadingValidationException("La sesion de lectura no esta vinculada a una lectura valida.");
 
         var readingPhases = await _dbContext.ReadingPhases
             .AsNoTracking()
@@ -1219,7 +1219,7 @@ public sealed class ReadingService : IReadingService
         }
 
         throw new ReadingValidationException(
-            $"You need to answer at least {readingPhase.MinQuestionsToUnlockNext.Value} question(s) before completing the {readingPhase.Phase.DisplayName} phase.");
+            $"Debes responder al menos {readingPhase.MinQuestionsToUnlockNext.Value} pregunta(s) antes de completar la fase {readingPhase.Phase.DisplayName}.");
     }
 
     private static DimensionBucket MapDimensionBucket(string dimensionName)

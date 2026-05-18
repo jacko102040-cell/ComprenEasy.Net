@@ -49,7 +49,7 @@ public sealed class AuthService : IAuthService
 
         if (studentRole is null)
         {
-            throw new InvalidOperationException("The Student role is not configured.");
+            throw new InvalidOperationException("El rol Student no esta configurado.");
         }
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);

@@ -125,12 +125,12 @@ public sealed class AcademicFlowService : IAcademicFlowService
 
         if (student is null)
         {
-            throw new AcademicFlowAccessDeniedException("Authenticated user is not registered as a student.");
+            throw new AcademicFlowAccessDeniedException("El usuario autenticado no esta registrado como estudiante.");
         }
 
         if (!student.IsEnabledForTest)
         {
-            throw new AcademicFlowAccessDeniedException("Student is not enabled for the academic flow.");
+            throw new AcademicFlowAccessDeniedException("El estudiante no esta habilitado para el flujo academico.");
         }
     }
 

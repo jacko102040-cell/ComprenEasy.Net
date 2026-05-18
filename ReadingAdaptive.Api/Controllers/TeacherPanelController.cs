@@ -150,7 +150,7 @@ public class TeacherPanelController : ControllerBase
 
         if (!int.TryParse(userIdClaim, out var teacherId))
         {
-            throw new TeacherPanelAccessDeniedException("Authenticated teacher claim is invalid.");
+            throw new TeacherPanelAccessDeniedException("La credencial del docente autenticado no es valida.");
         }
 
         return teacherId;

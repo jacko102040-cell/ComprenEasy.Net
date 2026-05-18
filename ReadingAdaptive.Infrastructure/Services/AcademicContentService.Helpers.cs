@@ -16,12 +16,12 @@ public sealed partial class AcademicContentService
 
         if (teacher is null)
         {
-            throw new AcademicContentAccessDeniedException("Authenticated user is not registered as a teacher.");
+            throw new AcademicContentAccessDeniedException("El usuario autenticado no esta registrado como docente.");
         }
 
         if (!teacher.IsHiddenAdmin)
         {
-            throw new AcademicContentAccessDeniedException("Authenticated teacher is not allowed to manage academic content.");
+            throw new AcademicContentAccessDeniedException("El docente autenticado no tiene permiso para administrar contenido academico.");
         }
 
         return teacher;
@@ -33,12 +33,12 @@ public sealed partial class AcademicContentService
     {
         if (string.IsNullOrWhiteSpace(request.Title))
         {
-            throw new AcademicContentValidationException("Reading title is required.");
+            throw new AcademicContentValidationException("El titulo de la lectura es obligatorio.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Content))
         {
-            throw new AcademicContentValidationException("Reading content is required.");
+            throw new AcademicContentValidationException("El contenido de la lectura es obligatorio.");
         }
 
         var difficultyExists = await _dbContext.DifficultyLevels
@@ -47,17 +47,17 @@ public sealed partial class AcademicContentService
 
         if (!difficultyExists)
         {
-            throw new AcademicContentValidationException("Selected difficulty level is invalid.");
+            throw new AcademicContentValidationException("El nivel de dificultad seleccionado no es valido.");
         }
 
         if (request.Phases.Select(item => item.PhaseId).Distinct().Count() != request.Phases.Count)
         {
-            throw new AcademicContentValidationException("Duplicated reading phases are not allowed.");
+            throw new AcademicContentValidationException("No se permiten fases de lectura duplicadas.");
         }
 
         if (request.Phases.Select(item => item.DisplayOrder).Distinct().Count() != request.Phases.Count)
         {
-            throw new AcademicContentValidationException("Duplicated phase display order values are not allowed.");
+            throw new AcademicContentValidationException("No se permiten valores duplicados de orden de visualizacion de la fase.");
         }
 
         var phaseIds = request.Phases.Select(item => item.PhaseId).Distinct().ToList();
@@ -70,7 +70,7 @@ public sealed partial class AcademicContentService
 
             if (existingPhaseCount != phaseIds.Count)
             {
-                throw new AcademicContentValidationException("One or more selected reading phases are invalid.");
+                throw new AcademicContentValidationException("Una o mas fases de lectura seleccionadas no son validas.");
             }
         }
     }
@@ -83,12 +83,12 @@ public sealed partial class AcademicContentService
 
         if (!SupportedAssessmentTypes.Contains(request.AssessmentType))
         {
-            throw new AcademicContentValidationException("Unsupported assessment type.");
+            throw new AcademicContentValidationException("Tipo de evaluacion no compatible.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Title))
         {
-            throw new AcademicContentValidationException("Assessment title is required.");
+            throw new AcademicContentValidationException("El titulo de la evaluacion es obligatorio.");
         }
 
         if (request.DifficultyLevelId.HasValue)
@@ -99,7 +99,7 @@ public sealed partial class AcademicContentService
 
             if (!difficultyExists)
             {
-                throw new AcademicContentValidationException("Selected difficulty level is invalid.");
+                throw new AcademicContentValidationException("El nivel de dificultad seleccionado no es valido.");
             }
         }
 
@@ -107,7 +107,7 @@ public sealed partial class AcademicContentService
         {
             if (!request.ReadingId.HasValue)
             {
-                throw new AcademicContentValidationException("ReadingPractice assessments must be linked to a reading.");
+                throw new AcademicContentValidationException("Las evaluaciones ReadingPractice deben vincularse a una lectura.");
             }
 
             var readingExists = await _dbContext.Readings
@@ -116,32 +116,32 @@ public sealed partial class AcademicContentService
 
             if (!readingExists)
             {
-                throw new AcademicContentValidationException("Selected reading is invalid.");
+                throw new AcademicContentValidationException("La lectura seleccionada no es valida.");
             }
         }
         else if (request.Questions.Any(item => item.PhaseId.HasValue))
         {
-            throw new AcademicContentValidationException("Only ReadingPractice assessments can assign phases to questions.");
+            throw new AcademicContentValidationException("Solo las evaluaciones ReadingPractice pueden asignar fases a las preguntas.");
         }
 
         if (request.Questions.Select(item => item.QuestionId).Distinct().Count() != request.Questions.Count)
         {
-            throw new AcademicContentValidationException("Duplicated questions are not allowed in the same assessment payload.");
+            throw new AcademicContentValidationException("No se permiten preguntas duplicadas en la misma carga de la evaluacion.");
         }
 
         if (request.Questions.Select(item => item.DisplayOrder).Distinct().Count() != request.Questions.Count)
         {
-            throw new AcademicContentValidationException("Duplicated question display order values are not allowed.");
+            throw new AcademicContentValidationException("No se permiten valores duplicados de orden de visualizacion de la pregunta.");
         }
 
         if (request.Questions.Any(item => item.Points <= 0))
         {
-            throw new AcademicContentValidationException("Question points must be greater than 0.");
+            throw new AcademicContentValidationException("Los puntos de la pregunta deben ser mayores que 0.");
         }
 
         if (isReadingPractice && request.Questions.Any(item => !item.PhaseId.HasValue))
         {
-            throw new AcademicContentValidationException("ReadingPractice questions must include a valid phase.");
+            throw new AcademicContentValidationException("Las preguntas ReadingPractice deben incluir una fase valida.");
         }
 
         var questionIds = request.Questions.Select(item => item.QuestionId).Distinct().ToList();
@@ -154,7 +154,7 @@ public sealed partial class AcademicContentService
 
             if (existingQuestionCount != questionIds.Count)
             {
-                throw new AcademicContentValidationException("One or more selected assessment questions are invalid.");
+                throw new AcademicContentValidationException("Una o mas preguntas de evaluacion seleccionadas no son validas.");
             }
         }
 
@@ -172,7 +172,7 @@ public sealed partial class AcademicContentService
 
             if (existingPhaseCount != phaseIds.Count)
             {
-                throw new AcademicContentValidationException("One or more selected assessment phases are invalid.");
+                throw new AcademicContentValidationException("Una o mas fases de evaluacion seleccionadas no son validas.");
             }
         }
 
@@ -188,34 +188,34 @@ public sealed partial class AcademicContentService
     {
         if (string.IsNullOrWhiteSpace(request.Stem))
         {
-            throw new AcademicContentValidationException("Question stem is required.");
+            throw new AcademicContentValidationException("El enunciado de la pregunta es obligatorio.");
         }
 
         if (string.IsNullOrWhiteSpace(request.QuestionType))
         {
-            throw new AcademicContentValidationException("Question type is required.");
+            throw new AcademicContentValidationException("El tipo de pregunta es obligatorio.");
         }
 
         if (request.Options.Count < 2)
         {
-            throw new AcademicContentValidationException("At least two options are required.");
+            throw new AcademicContentValidationException("Se requieren al menos dos opciones.");
         }
 
         var correctOptionsCount = request.Options.Count(item => item.IsCorrect);
 
         if (correctOptionsCount != 1)
         {
-            throw new AcademicContentValidationException("Exactly one option must be marked as correct.");
+            throw new AcademicContentValidationException("Exactamente una opcion debe marcarse como correcta.");
         }
 
         if (request.Options.Any(item => string.IsNullOrWhiteSpace(item.OptionText)))
         {
-            throw new AcademicContentValidationException("Option text is required.");
+            throw new AcademicContentValidationException("El texto de la opcion es obligatorio.");
         }
 
         if (request.Options.Select(item => item.DisplayOrder).Distinct().Count() != request.Options.Count)
         {
-            throw new AcademicContentValidationException("Duplicated option display order values are not allowed.");
+            throw new AcademicContentValidationException("No se permiten valores duplicados de orden de visualizacion de la opcion.");
         }
 
         var dimensionExists = await _dbContext.Dimensions
@@ -224,7 +224,7 @@ public sealed partial class AcademicContentService
 
         if (!dimensionExists)
         {
-            throw new AcademicContentValidationException("Selected dimension is invalid.");
+            throw new AcademicContentValidationException("La dimension seleccionada no es valida.");
         }
     }
 
@@ -288,7 +288,7 @@ public sealed partial class AcademicContentService
             {
                 if (!existingById.TryGetValue(question.AssessmentQuestionId.Value, out var existing))
                 {
-                    throw new AcademicContentValidationException("One or more assessment question ids are invalid for this assessment.");
+                    throw new AcademicContentValidationException("Uno o mas ids de pregunta de evaluacion no son validos para esta evaluacion.");
                 }
 
                 existing.QuestionId = question.QuestionId;
@@ -375,7 +375,7 @@ public sealed partial class AcademicContentService
 
         if (usedOptionIds.Count > 0)
         {
-            throw new AcademicContentValidationException("Options already used in student attempts cannot be removed.");
+            throw new AcademicContentValidationException("No se pueden eliminar opciones ya usadas en intentos de estudiantes.");
         }
 
         _dbContext.QuestionOptions.RemoveRange(removableOptions);
@@ -401,7 +401,7 @@ public sealed partial class AcademicContentService
         if (existingReadingPhaseIds.Count != phaseIds.Count)
         {
             throw new AcademicContentValidationException(
-                "One or more selected phases do not belong to the linked reading.");
+                "Una o mas fases seleccionadas no pertenecen a la lectura vinculada.");
         }
     }
 
