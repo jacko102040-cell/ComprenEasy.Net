@@ -1,0 +1,41 @@
+name: Build and deploy ASP.NET Core app to Azure Web App - compreneasy-api-jairo
+
+on:
+  push:
+    branches:
+      - deploy-prep
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: compreneasy-api-jairo
+  DOTNET_VERSION: '9.x'
+  PUBLISH_DIR: './publish'
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore API
+        run: dotnet restore ReadingAdaptive.Api/ReadingAdaptive.Api.csproj
+
+      - name: Build API
+        run: dotnet build ReadingAdaptive.Api/ReadingAdaptive.Api.csproj --configuration Release --no-restore
+
+      - name: Publish API
+        run: dotnet publish ReadingAdaptive.Api/ReadingAdaptive.Api.csproj --configuration Release --output "${{ env.PUBLISH_DIR }}" --no-build
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ env.PUBLISH_DIR }}
