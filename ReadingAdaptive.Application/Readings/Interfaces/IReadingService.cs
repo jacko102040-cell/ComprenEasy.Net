@@ -34,6 +34,13 @@ public interface IReadingService
         SaveReadingPhaseProgressRequestDto request,
         CancellationToken cancellationToken = default);
 
+    Task<SaveReadingPhaseAnswerResponseDto> SavePhaseAnswerAsync(
+        long attemptId,
+        byte phaseId,
+        int studentId,
+        SaveReadingPhaseAnswerRequestDto request,
+        CancellationToken cancellationToken = default);
+
     Task<ReadingSessionProgressDto> CompletePhaseAsync(
         long attemptId,
         byte phaseId,

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using ReadingAdaptive.Application.Adaptive.Constants;
 using ReadingAdaptive.Application.Adaptive.Dtos;
@@ -206,6 +207,69 @@ public sealed class TeacherPanelService : ITeacherPanelService
         return await GetActiveCommentTagsInternalAsync(cancellationToken);
     }
 
+    public async Task<TeacherPanelExportFileDto> ExportPosttestReadingsAsync(
+        int teacherId,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureTeacherAsync(teacherId, cancellationToken);
+
+        var attempts = await _dbContext.AssessmentAttempts
+            .AsNoTracking()
+            .Where(attempt =>
+                attempt.Status == CompletedStatus &&
+                attempt.TotalScore != null &&
+                (attempt.Assessment.AssessmentType == AssessmentTypes.Posttest ||
+                    attempt.Assessment.AssessmentType == ReadingAssessmentTypes.ReadingPractice))
+            .Select(attempt => new ExportAttemptRow(
+                attempt.StudentId,
+                attempt.Student.StudentNavigation.FullName,
+                attempt.Student.StudentNavigation.Username,
+                attempt.Student.Grade,
+                attempt.Student.Section,
+                attempt.Assessment.AssessmentType,
+                attempt.Assessment.Title,
+                attempt.StartedAt,
+                attempt.FinishedAt,
+                attempt.LiteralScore,
+                attempt.InferentialScore,
+                attempt.CriticalScore,
+                attempt.TotalScore))
+            .ToListAsync(cancellationToken);
+
+        var students = attempts
+            .GroupBy(attempt => attempt.StudentId)
+            .Select(group =>
+            {
+                var posttest = group
+                    .Where(attempt => attempt.AssessmentType == AssessmentTypes.Posttest)
+                    .OrderByDescending(attempt => attempt.FinishedAt ?? attempt.StartedAt)
+                    .FirstOrDefault();
+
+                if (posttest is null)
+                {
+                    return null;
+                }
+
+                var readings = group
+                    .Where(attempt => attempt.AssessmentType == ReadingAssessmentTypes.ReadingPractice)
+                    .OrderBy(attempt => attempt.FinishedAt ?? attempt.StartedAt)
+                    .ToList();
+
+                return new ExportStudentRow(posttest, readings);
+            })
+            .Where(student => student is not null)
+            .Select(student => student!)
+            .OrderBy(student => student.Posttest.FullName)
+            .ToList();
+
+        var content = BuildPosttestReadingsWorkbook(students);
+
+        return new TeacherPanelExportFileDto(
+            content,
+            "seguimiento_postest_lecturas.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+
     public async Task<ResetStudentPasswordResponseDto> ResetStudentPasswordAsync(
         int teacherId,
         int studentId,
@@ -351,6 +415,98 @@ public sealed class TeacherPanelService : ITeacherPanelService
         return $"Temp{studentId}{suffix}!";
     }
 
+    private static byte[] BuildPosttestReadingsWorkbook(IReadOnlyCollection<ExportStudentRow> students)
+    {
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Postest y lecturas");
+
+        var maxReadings = students.Count == 0 ? 0 : students.Max(student => student.Readings.Count);
+        var headers = new List<string>
+        {
+            "Estudiante",
+            "Usuario",
+            "Grado",
+            "Seccion",
+            "Postest_Literal",
+            "Postest_Inferencial",
+            "Postest_CriticaEvaluativa",
+            "Postest_Total",
+            "Lecturas_Realizadas"
+        };
+
+        for (var index = 1; index <= maxReadings; index++)
+        {
+            headers.Add($"Lectura_{index}_Titulo");
+            headers.Add($"Lectura_{index}_Literal");
+            headers.Add($"Lectura_{index}_Inferencial");
+            headers.Add($"Lectura_{index}_CriticaEvaluativa");
+            headers.Add($"Lectura_{index}_Total");
+        }
+
+        for (var index = 0; index < headers.Count; index++)
+        {
+            worksheet.Cell(1, index + 1).Value = headers[index];
+        }
+
+        var row = 2;
+        foreach (var student in students)
+        {
+            var column = 1;
+            worksheet.Cell(row, column++).Value = student.Posttest.FullName;
+            worksheet.Cell(row, column++).Value = student.Posttest.Username;
+            worksheet.Cell(row, column++).Value = student.Posttest.Grade;
+            worksheet.Cell(row, column++).Value = student.Posttest.Section ?? "Sin seccion";
+            WriteScore(worksheet.Cell(row, column++), student.Posttest.LiteralScore);
+            WriteScore(worksheet.Cell(row, column++), student.Posttest.InferentialScore);
+            WriteScore(worksheet.Cell(row, column++), student.Posttest.CriticalScore);
+            WriteScore(worksheet.Cell(row, column++), student.Posttest.TotalScore);
+            worksheet.Cell(row, column++).Value = student.Readings.Count;
+
+            foreach (var reading in student.Readings)
+            {
+                worksheet.Cell(row, column++).Value = reading.AssessmentTitle;
+                WriteScore(worksheet.Cell(row, column++), reading.LiteralScore);
+                WriteScore(worksheet.Cell(row, column++), reading.InferentialScore);
+                WriteScore(worksheet.Cell(row, column++), reading.CriticalScore);
+                WriteScore(worksheet.Cell(row, column++), reading.TotalScore);
+            }
+
+            row++;
+        }
+
+        var usedRange = worksheet.RangeUsed();
+        if (usedRange is not null)
+        {
+            usedRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            usedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            usedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        }
+
+        var headerRange = worksheet.Range(1, 1, 1, headers.Count);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#6B1714");
+        headerRange.Style.Font.FontColor = XLColor.White;
+        headerRange.SetAutoFilter();
+
+        worksheet.Columns().AdjustToContents();
+        worksheet.SheetView.FreezeRows(1);
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    private static void WriteScore(IXLCell cell, decimal? score)
+    {
+        if (score is null)
+        {
+            return;
+        }
+
+        cell.Value = score.Value;
+        cell.Style.NumberFormat.Format = "0.00";
+    }
+
     private static AdaptiveRecommendationDto MapAdaptiveRecommendation(AdaptiveRecommendation recommendation)
     {
         var recommendedActivityType = recommendation.RecommendedAssessment?.AssessmentType ??
@@ -381,4 +537,23 @@ public sealed class TeacherPanelService : ITeacherPanelService
             recommendation.ConfidenceScore,
             recommendation.CreatedAt);
     }
+
+    private sealed record ExportAttemptRow(
+        int StudentId,
+        string FullName,
+        string Username,
+        byte Grade,
+        string? Section,
+        string AssessmentType,
+        string AssessmentTitle,
+        DateTime StartedAt,
+        DateTime? FinishedAt,
+        decimal? LiteralScore,
+        decimal? InferentialScore,
+        decimal? CriticalScore,
+        decimal? TotalScore);
+
+    private sealed record ExportStudentRow(
+        ExportAttemptRow Posttest,
+        IReadOnlyCollection<ExportAttemptRow> Readings);
 }

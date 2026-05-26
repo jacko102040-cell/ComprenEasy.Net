@@ -398,6 +398,55 @@ public sealed class ReadingService : IReadingService
         return await BuildSessionProgressDtoAsync(attempt, cancellationToken);
     }
 
+    public async Task<SaveReadingPhaseAnswerResponseDto> SavePhaseAnswerAsync(
+        long attemptId,
+        byte phaseId,
+        int studentId,
+        SaveReadingPhaseAnswerRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var (attempt, phaseProgress, _) = await GetOwnedReadingPhaseAsync(
+            attemptId,
+            phaseId,
+            studentId,
+            cancellationToken);
+
+        EnsureSessionIsInProgress(attempt);
+
+        if (string.Equals(phaseProgress.Status, CompletedStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ReadingValidationException("Completed phases cannot receive additional progress.");
+        }
+
+        if (phaseProgress.StartedAt is null)
+        {
+            phaseProgress.StartedAt = DateTime.UtcNow;
+        }
+
+        phaseProgress.Status = InProgressStatus;
+
+        await SavePhaseAnswersAsync(
+            attempt,
+            phaseId,
+            [
+                new SaveReadingPhaseAnswerItemDto
+                {
+                    QuestionId = request.QuestionId,
+                    SelectedOptionId = request.SelectedOptionId,
+                    AnswerTimeSeconds = request.AnswerTimeSeconds
+                }
+            ],
+            cancellationToken);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await BuildPhaseAnswerSaveResponseAsync(
+            attempt.AttemptId,
+            attempt.AssessmentId,
+            phaseId,
+            cancellationToken);
+    }
+
     public async Task<ReadingSessionProgressDto> CompletePhaseAsync(
         long attemptId,
         byte phaseId,
@@ -801,6 +850,63 @@ public sealed class ReadingService : IReadingService
                 AnsweredAt = answeredAt
             });
         }
+    }
+
+    private async Task<SaveReadingPhaseAnswerResponseDto> BuildPhaseAnswerSaveResponseAsync(
+        long attemptId,
+        int assessmentId,
+        byte phaseId,
+        CancellationToken cancellationToken)
+    {
+        var questionRows = await _dbContext.AssessmentQuestions
+            .AsNoTracking()
+            .Where(question =>
+                question.AssessmentId == assessmentId &&
+                question.IsActive &&
+                question.PhaseId != null)
+            .Select(question => new
+            {
+                question.QuestionId,
+                question.PhaseId
+            })
+            .ToListAsync(cancellationToken);
+
+        var questionIds = questionRows
+            .Select(question => question.QuestionId)
+            .Distinct()
+            .ToList();
+
+        var answeredQuestionIds = questionIds.Count == 0
+            ? []
+            : await _dbContext.AttemptAnswers
+                .AsNoTracking()
+                .Where(answer =>
+                    answer.AttemptId == attemptId &&
+                    answer.SelectedOptionId != null &&
+                    questionIds.Contains(answer.QuestionId))
+                .Select(answer => answer.QuestionId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+        var answeredQuestionIdSet = answeredQuestionIds.ToHashSet();
+        var phaseQuestionIds = questionRows
+            .Where(question => question.PhaseId == phaseId)
+            .Select(question => question.QuestionId)
+            .Distinct()
+            .ToList();
+        var phaseAnsweredQuestions = phaseQuestionIds.Count(answeredQuestionIdSet.Contains);
+        var totalQuestions = questionIds.Count;
+        var totalAnsweredQuestions = answeredQuestionIdSet.Count;
+
+        return new SaveReadingPhaseAnswerResponseDto(
+            attemptId,
+            phaseId,
+            1,
+            phaseAnsweredQuestions,
+            phaseQuestionIds.Count,
+            totalAnsweredQuestions,
+            totalQuestions,
+            totalQuestions == 0 ? 0m : RoundPercentage(totalAnsweredQuestions, totalQuestions));
     }
 
     private async Task<ReadingSessionProgressDto> BuildSessionProgressDtoAsync(

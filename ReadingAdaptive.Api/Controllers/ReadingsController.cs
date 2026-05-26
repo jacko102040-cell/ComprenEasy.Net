@@ -187,6 +187,48 @@ public class ReadingsController : ControllerBase
         }
     }
 
+    [HttpPost("sessions/{attemptId:long}/phases/{phaseId:int}/answers")]
+    [ProducesResponseType(typeof(SaveReadingPhaseAnswerResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SaveReadingPhaseAnswerResponseDto>> SavePhaseAnswer(
+        long attemptId,
+        int phaseId,
+        [FromBody] SaveReadingPhaseAnswerRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!TryConvertPhaseId(phaseId, out var normalizedPhaseId, out var errorResult))
+            {
+                return errorResult;
+            }
+
+            var studentId = GetAuthenticatedStudentId();
+            var response = await _readingService.SavePhaseAnswerAsync(
+                attemptId,
+                normalizedPhaseId,
+                studentId,
+                request,
+                cancellationToken);
+
+            return Ok(response);
+        }
+        catch (ReadingAccessDeniedException exception)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = exception.Message });
+        }
+        catch (ReadingNotFoundException exception)
+        {
+            return NotFound(new { message = exception.Message });
+        }
+        catch (ReadingValidationException exception)
+        {
+            return BadRequest(new { message = exception.Message });
+        }
+    }
+
     [HttpPost("sessions/{attemptId:long}/phases/{phaseId:int}/complete")]
     [ProducesResponseType(typeof(ReadingSessionProgressDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -311,7 +353,7 @@ public class ReadingsController : ControllerBase
     private bool TryConvertPhaseId(
         int phaseId,
         out byte normalizedPhaseId,
-        out ActionResult<ReadingSessionProgressDto> errorResult)
+        out ActionResult errorResult)
     {
         if (phaseId < byte.MinValue || phaseId > byte.MaxValue)
         {

@@ -56,6 +56,23 @@ public class TeacherPanelController : ControllerBase
         }
     }
 
+    [HttpGet("exports/posttest-readings.xlsx")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ExportPosttestReadings(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var teacherId = GetAuthenticatedTeacherId();
+            var export = await _teacherPanelService.ExportPosttestReadingsAsync(teacherId, cancellationToken);
+            return File(export.Content, export.ContentType, export.FileName);
+        }
+        catch (TeacherPanelAccessDeniedException exception)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = exception.Message });
+        }
+    }
+
     [HttpGet("students/{studentId:int}")]
     [ProducesResponseType(typeof(TeacherStudentDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

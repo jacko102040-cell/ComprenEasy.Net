@@ -17,6 +17,10 @@ public interface ITeacherPanelService
         int teacherId,
         CancellationToken cancellationToken = default);
 
+    Task<TeacherPanelExportFileDto> ExportPosttestReadingsAsync(
+        int teacherId,
+        CancellationToken cancellationToken = default);
+
     Task<ResetStudentPasswordResponseDto> ResetStudentPasswordAsync(
         int teacherId,
         int studentId,
